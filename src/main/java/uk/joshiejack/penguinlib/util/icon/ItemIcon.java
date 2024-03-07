@@ -1,59 +1,70 @@
 package uk.joshiejack.penguinlib.util.icon;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import uk.joshiejack.penguinlib.client.renderer.ShadowRenderer;
 
 import java.util.List;
 
 public class ItemIcon extends Icon {
-    public static final Icon EMPTY = new ItemIcon(ItemStack.EMPTY);
-    private final ItemStack stack;
+    public static final Codec<ItemIcon> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            ItemStack.CODEC.fieldOf("item").forGetter(icon -> icon.stack)
+    ).apply(instance, ItemIcon::new));
 
-    public ItemIcon(Item item) {
-        this(new ItemStack(item));
-    }
+    public static final Icon EMPTY = new ItemIcon(ItemStack.EMPTY);
+    public final ItemStack stack;
+    private int count;
 
     public ItemIcon(ItemStack stack) {
+        super(Type.ITEM, stack.getCount());
         this.stack = stack;
+        this.count = stack.getCount();
+    }
+    public ItemIcon(FriendlyByteBuf buf) {
+        this(buf.readItem());
     }
 
     @Override
-    public JsonElement toJson(JsonObject json) {
-        json.addProperty("item", stack.getItem().getRegistryName().toString());
-        return json;
+    public Codec<? extends Icon> codec() {
+        return CODEC;
     }
 
     @Override
-    public void toNetwork(PacketBuffer pb) {
-        pb.writeByte(Icon.Type.ITEM.ordinal());
+    public void toNetwork(FriendlyByteBuf pb) {
         pb.writeItem(stack);
     }
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    public void render(Minecraft mc, MatrixStack matrix, int x, int y) {
+    public void render(Minecraft mc, GuiGraphics graphics, int x, int y) {
         if (shadowed) ShadowRenderer.enable();
-        mc.getItemRenderer().renderGuiItem(stack, x, y);
+        graphics.renderItem(stack, x, y);
+        graphics.renderItemDecorations(mc.font, stack, x, y, count == 1 ? null : String.valueOf(this.count));
         if (shadowed) {
             ShadowRenderer.disable();
             shadowed = false;
         }
+
+        setCount(originalCount); //Reset the count
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
-    public List<ITextComponent> getTooltipLines(PlayerEntity player) {
-        return stack.getTooltipLines(player, ITooltipFlag.TooltipFlags.NORMAL);
+    public Icon setCount(int count) {
+        this.count = count;
+        return this;
+    }
+
+    @Override
+    public List<Component> getTooltipLines(Player player) {
+        return stack.getTooltipLines(player, TooltipFlag.NORMAL);
     }
 }

@@ -1,153 +1,162 @@
 package uk.joshiejack.penguinlib;
 
-import net.minecraft.data.BlockTagsProvider;
+import com.google.common.collect.Lists;
+import com.mojang.logging.LogUtils;
+import net.minecraft.DetectedVersion;
 import net.minecraft.data.DataGenerator;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.BusBuilder;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.GatherDataEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.moddiscovery.ModAnnotation;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.forgespi.language.ModFileScanData;
+import net.minecraft.data.PackOutput;
+import net.minecraft.data.metadata.PackMetadataGenerator;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
+import net.minecraft.util.InclusiveRange;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.moddiscovery.ModAnnotation;
+import net.neoforged.fml.util.ObfuscationReflectionHelper;
+import net.neoforged.neoforge.data.event.GatherDataEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlerEvent;
+import net.neoforged.neoforge.network.registration.IPayloadRegistrar;
+import net.neoforged.neoforgespi.language.ModFileScanData;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Type;
+import org.slf4j.Logger;
 import uk.joshiejack.penguinlib.client.PenguinClientConfig;
-import uk.joshiejack.penguinlib.data.LootTableMerger;
 import uk.joshiejack.penguinlib.data.PenguinRegistries;
-import uk.joshiejack.penguinlib.data.custom.CustomObject;
-import uk.joshiejack.penguinlib.data.generators.*;
-import uk.joshiejack.penguinlib.events.CollectRegistryEvent;
-import uk.joshiejack.penguinlib.item.PenguinItems;
+import uk.joshiejack.penguinlib.data.generator.*;
 import uk.joshiejack.penguinlib.network.PenguinNetwork;
-import uk.joshiejack.penguinlib.network.PenguinPacket;
-import uk.joshiejack.penguinlib.util.PenguinLoader;
-import uk.joshiejack.penguinlib.util.helpers.ReflectionHelper;
-import uk.joshiejack.penguinlib.util.interfaces.IModPlugin;
+import uk.joshiejack.penguinlib.network.packet.PenguinPacket;
+import uk.joshiejack.penguinlib.util.IModPlugin;
+import uk.joshiejack.penguinlib.util.registry.Packet;
+import uk.joshiejack.penguinlib.util.registry.Plugin;
+import uk.joshiejack.penguinlib.world.item.PenguinItems;
 
-import javax.annotation.Nonnull;
-import java.util.*;
-import java.util.function.BiConsumer;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 
-@SuppressWarnings("rawtypes")
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
+@Mod.EventBusSubscriber(modid = PenguinLib.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 @Mod(PenguinLib.MODID)
 public class PenguinLib {
     public static final String MODID = "penguinlib";
-    public static final IEventBus EVENT_BUS = BusBuilder.builder().build();
-    public static final Logger LOGGER = LogManager.getLogger();
-    private static final Type LOADER = Type.getType(PenguinLoader.class);
-    private static final Type PACKET = Type.getType(PenguinLoader.Packet.class);
-    public static final ItemGroup TAB = new ItemGroup(MODID) {
-        @Nonnull
-        @OnlyIn(Dist.CLIENT)
-        public ItemStack makeIcon() {
-            return new ItemStack(PenguinItems.JAM_JAR.get());
-        }
-    };
+    public static final String DATABASE_FOLDER = MODID + "/database";
+    public static final Logger LOGGER = LogUtils.getLogger();
+    private static final Type PACKET = Type.getType(Packet.class);
+    private static final Type PLUGIN = Type.getType(Plugin.class);
+    public static final String CATEGORIES_FOLDER = MODID + "/categories";
+    public static final String NOTES_FOLDER = MODID + "/notes";
+    private static List<IModPlugin> plugins = new ArrayList<>();
 
-    public PenguinLib() {
-        PenguinLib.EVENT_BUS.register(this);
-        IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
-        eventBus.addListener(this::setup);
-        //Custom stuff needs to happen, before the registry loads
-        Map<Class<?>, BiConsumer<Class<?>, String>> processors = new HashMap<>();
-        processors.put(CustomObject.Data.class, (Class<?> data, String string) ->
-                CustomObject.TYPE_REGISTRY.put(string, (CustomObject.Data) Objects.requireNonNull(ReflectionHelper.newInstance(data))));
-        registerPenguinLoaderData(processors);
-        MinecraftForge.EVENT_BUS.register(this);
-        PenguinItems.ITEMS.register(eventBus);
-        LootTableMerger.LOOT_MODIFIER_SERIALIZERS.register(eventBus);
-        PenguinRegistries.SERIALIZERS.register(eventBus);
+    public PenguinLib(IEventBus eventBus) {
+        plugins = getPlugins();
+        PenguinLib.plugins.forEach(IModPlugin::construct);
+        PenguinItems.register(eventBus);
+        PenguinRegistries.register(eventBus);
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, PenguinClientConfig.create());
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, PenguinConfig.create());
     }
 
-    @SuppressWarnings("unchecked")
-    private void setup(FMLCommonSetupEvent event) {
-        List<Pair<String, Class<? extends IModPlugin>>> plugins = new ArrayList<>();
-        Map<Class<?>, BiConsumer<Class<?>, String>> processors = new HashMap<>();
-        processors.put(IModPlugin.class, (Class<?> data, String string) -> plugins.add(Pair.of(string, (Class<IModPlugin>) data)));
-        FMLJavaModLoadingContext.get().getModEventBus().post(new CollectRegistryEvent.Loader(processors));
+    @SubscribeEvent
+    public static void setup(FMLCommonSetupEvent event) {
         //Grab any other things that need to be automagically registered ^
-        registerPenguinLoaderData(processors); //Process them and load them
-        plugins.stream()
-                .filter(pair -> ModList.get().isLoaded(pair.getKey()))
-                .forEach(pair -> {
-                    try {
-                        Objects.requireNonNull(ReflectionHelper.newInstance(pair.getValue())).setup();
-                    } catch (Exception ex) {
-                        PenguinLib.LOGGER.error(String.format("Penguin-Lib failed to load a plugin for the mod %s.", pair.getKey()));
-                        ex.printStackTrace();
-                    }
-                });
-        plugins.clear(); //Kill them off
+        registerPenguinLoaderData(); //Process them and load them
+        plugins.forEach(IModPlugin::setup);
+        plugins = null; //Kill the plugins
     }
 
     @SubscribeEvent
-    public static void onDataGathering(final GatherDataEvent event) {
+    public static void onDataGathering(GatherDataEvent event) {
         final DataGenerator generator = event.getGenerator();
-        if (event.includeServer()) {
-            generator.addProvider(new PenguinDatabase(generator));
-            BlockTagsProvider blockTags = new PenguinBlockTags(generator, event.getExistingFileHelper());
-            generator.addProvider(blockTags);
-            generator.addProvider(new PenguinItemTags(generator, blockTags, event.getExistingFileHelper()));
-            generator.addProvider(new PenguinRecipes(generator));
-        }
+        final PackOutput output = event.getGenerator().getPackOutput();
+        //PackMetadataGenerator
+        PenguinBlockTags blocktags = new PenguinBlockTags(output, event.getLookupProvider(), event.getExistingFileHelper());
+        generator.addProvider(event.includeServer(), blocktags);
+        generator.addProvider(event.includeServer(), new PenguinItemTags(output, event.getLookupProvider(), blocktags.contentsGetter(), event.getExistingFileHelper()));
+        generator.addProvider(event.includeServer(), new PenguinBannerTags(output, event.getLookupProvider(), event.getExistingFileHelper()));
+        generator.addProvider(event.includeServer(), new PenguinDatabase(output));
+        generator.addProvider(event.includeServer(), new TestNotes(output));
 
-        if (event.includeClient()) {
-            generator.addProvider(new PenguinLanguage(generator));
-            generator.addProvider(new PenguinItemModels(generator, event.getExistingFileHelper()));
-        }
+        //Client
+        generator.addProvider(event.includeClient(), new PenguinSpriteSourceProvider(output, event.getLookupProvider(), event.getExistingFileHelper()));
+        generator.addProvider(event.includeClient(), new PenguinLanguage(output));
+        generator.addProvider(event.includeClient(), new PenguinItemModels(output, event.getExistingFileHelper()));
+        generator.addProvider(true, new PackMetadataGenerator(output).add(PackMetadataSection.TYPE, new PackMetadataSection(
+                Component.literal("Resources for Penguin-Lib"),
+                DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),
+                Optional.of(new InclusiveRange<>(0, Integer.MAX_VALUE)))));
+    }
+
+    private static List<Pair<Class<PenguinPacket>, PacketFlow>> PACKETS = Lists.newArrayList();
+
+    @SubscribeEvent
+    public static void registerPackets(final RegisterPayloadHandlerEvent event) {
+        final IPayloadRegistrar registrar = event.registrar(MODID).versioned("1.0.0");
+        PACKETS.forEach(pair -> {
+            ResourceLocation ID = ObfuscationReflectionHelper.getPrivateValue(pair.getLeft(), null, "ID");
+            if (ID == null) throw new RuntimeException("Packet " + pair.getLeft().getName() + " has no ID");
+            FriendlyByteBuf.Reader<PenguinPacket> reader = (buf) -> {
+                try {
+                    return pair.getLeft().getDeclaredConstructor(FriendlyByteBuf.class).newInstance(buf);
+                } catch (Exception e) {
+                    throw new RuntimeException("Packet " + pair.getLeft().getName() + " has no constructor that takes a FriendlyByteBuf");
+                }
+            };
+
+            //PenguinLib.LOGGER.info("Registering packet " + ID);
+            if (pair.getRight() == PacketFlow.SERVERBOUND) {
+                registrar.play(ID, reader, handler -> handler.server(PenguinNetwork::handlePacket));
+            } else registrar.play(ID, reader, handler -> handler.client(PenguinNetwork::handlePacket));
+        });
+
+        PACKETS = null;
+    }
+
+    private static List<IModPlugin> getPlugins() {
+        List<IModPlugin> list = new ArrayList<>();
+        ModList.get().getAllScanData().stream()
+                .map(ModFileScanData::getAnnotations)
+                .flatMap(Collection::stream)
+                .filter(a -> PLUGIN.equals(a.annotationType()))
+                .filter(a -> ModList.get().isLoaded((String) a.annotationData().get("value")))
+                .forEach(a -> {
+                    try {
+                        Class<?> clazz = Class.forName(a.clazz().getClassName());
+                        list.add((IModPlugin) clazz.getDeclaredConstructor().newInstance());
+                    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
+                             NoSuchMethodException ignored) { } catch (InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+        return list;
     }
 
     @SuppressWarnings("unchecked")
-    private void registerPenguinLoaderData(Map<Class<?>, BiConsumer<Class<?>, String>> processors) {
+    private static void registerPenguinLoaderData() {
         ModList.get().getAllScanData().stream()
                 .map(ModFileScanData::getAnnotations)
                 .flatMap(Collection::stream) //Either of the penguin annotation or the packet annotation is ok
-                .filter(a -> LOADER.equals(a.getAnnotationType()) || PACKET.equals(a.getAnnotationType()))//, i trust that i will use the packet one only on packets ;)
+                .filter(a -> PACKET.equals(a.annotationType()))//, i trust that i will use the packet one only on packets ;)
                 .forEach((a -> {
                     try {
-                        Class<?> clazz = Class.forName(a.getClassType().getClassName());
-                        if (PenguinPacket.class.isAssignableFrom(clazz))
-                            PenguinNetwork.registerPacket((Class<PenguinPacket>) clazz,
-                                    NetworkDirection.valueOf(((ModAnnotation.EnumHolder) a.getAnnotationData().get("value")).getValue()));
-                        else {
-                            processors.entrySet().stream()
-                                    .filter((entry) -> entry.getKey().isAssignableFrom(clazz))
-                                    .forEach(entry -> entry.getValue().accept(clazz, (String) a.getAnnotationData().get("value")));
-                        }
-                    } catch (ClassNotFoundException ignored) {
-                    }
+                        Class<?> clazz = Class.forName(a.clazz().getClassName());
+                        PACKETS.add(Pair.of((Class<PenguinPacket>) clazz, PacketFlow.valueOf(((ModAnnotation.EnumHolder) a.annotationData().get("value")).getValue())));
+                    } catch (ClassNotFoundException ignored) {}
                 }));
     }
 
-    public static class PenguinConfig {
-        public static ForgeConfigSpec.BooleanValue enableTeamCommands;
-        public static ForgeConfigSpec.BooleanValue enableDatabaseDebugger;
-
-        PenguinConfig(ForgeConfigSpec.Builder builder) {
-            enableTeamCommands = builder.define("Enable Penguin Team Commands", true);
-            enableDatabaseDebugger = builder.define("Enable Database Debug Output", false);
-        }
-
-        public static ForgeConfigSpec create() {
-            return new ForgeConfigSpec.Builder().configure(PenguinConfig::new).getValue();
-        }
+    public static ResourceLocation prefix(String path) {
+        return new ResourceLocation(MODID, path.toLowerCase());
     }
+
 }

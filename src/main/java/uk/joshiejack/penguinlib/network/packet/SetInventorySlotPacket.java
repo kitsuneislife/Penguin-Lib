@@ -1,56 +1,42 @@
 package uk.joshiejack.penguinlib.network.packet;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.IItemHandlerModifiable;
-import uk.joshiejack.penguinlib.tile.inventory.AbstractInventoryTileEntity;
-import uk.joshiejack.penguinlib.util.PenguinLoader;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import uk.joshiejack.penguinlib.PenguinLib;
+import uk.joshiejack.penguinlib.util.registry.Packet;
+import uk.joshiejack.penguinlib.world.block.entity.inventory.InventoryBlockEntity;
 
-@PenguinLoader.Packet(NetworkDirection.PLAY_TO_CLIENT)
-public class SetInventorySlotPacket extends BlockRenderUpdatePacket {
-    private int slot;
-    private ItemStack stack;
+import javax.annotation.Nonnull;
 
-    public SetInventorySlotPacket() {}
-    public SetInventorySlotPacket(BlockPos pos, int slot, ItemStack stack) {
-        super(pos);
-        this.slot = slot;
-        this.stack = stack;
+@Packet(PacketFlow.CLIENTBOUND)
+public record SetInventorySlotPacket(BlockPos pos, int slot, ItemStack stack) implements PenguinPacket {
+    public static final ResourceLocation ID = PenguinLib.prefix("set_inventory_slot");
+    @Override
+    public @Nonnull ResourceLocation id() {
+        return ID;
+    }
+
+    public SetInventorySlotPacket(FriendlyByteBuf from) {
+        this(BlockPos.of(from.readLong()), from.readInt(), from.readItem());
     }
 
     @Override
-    public void encode(PacketBuffer to) {
-        super.encode(to);
+    public void write(FriendlyByteBuf to) {
+        to.writeLong(pos.asLong());
         to.writeInt(slot);
-        to.writeItemStack(stack, false);
+        to.writeItem(stack);
     }
 
     @Override
-    public void decode(PacketBuffer from) {
-        super.decode(from);
-        slot = from.readInt();
-        stack = from.readItem();
-    }
-
-    @Override
-    public void handle(PlayerEntity player) {
-        TileEntity tile = player.level.getBlockEntity(pos);
-        if (tile instanceof AbstractInventoryTileEntity) {
-            LazyOptional<IItemHandler> handler = tile.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY);
-            handler.ifPresent(itemHandler -> {
-                if (itemHandler instanceof IItemHandlerModifiable) {
-                    ((IItemHandlerModifiable) itemHandler).setStackInSlot(slot, stack);
-                }
-            });
+    public void handle(Player player) {
+        BlockEntity tile = player.level().getBlockEntity(pos);
+        if (tile instanceof InventoryBlockEntity te) {
+            te.setItem(slot, stack);
         }
-
-        super.handle(player);
     }
 }

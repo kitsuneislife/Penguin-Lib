@@ -1,33 +1,29 @@
 package uk.joshiejack.penguinlib.network.packet;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fml.network.NetworkDirection;
-import uk.joshiejack.penguinlib.network.PenguinPacket;
-import uk.joshiejack.penguinlib.util.PenguinLoader;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.resources.ResourceLocation;
+import uk.joshiejack.penguinlib.PenguinLib;
+import uk.joshiejack.penguinlib.util.registry.Packet;
 
-@PenguinLoader.Packet(NetworkDirection.PLAY_TO_CLIENT)
-public class BlockRenderUpdatePacket extends PenguinPacket {
-    protected BlockPos pos;
+import javax.annotation.Nonnull;
 
-    public BlockRenderUpdatePacket() {}
-    public BlockRenderUpdatePacket(BlockPos pos) {
-        this.pos = pos;
+@Packet(PacketFlow.CLIENTBOUND)
+public record BlockRenderUpdatePacket(BlockPos pos) implements PenguinPacket {
+    public static final ResourceLocation ID = PenguinLib.prefix("block_render_update");
+
+    @Override
+    public @Nonnull ResourceLocation id() {
+        return ID;
+    }
+
+    public BlockRenderUpdatePacket(FriendlyByteBuf from) {
+        this(BlockPos.of(from.readLong()));
     }
 
     @Override
-    public void encode(PacketBuffer to) {
+    public void write(FriendlyByteBuf to) {
         to.writeLong(pos.asLong());
-    }
-
-    @Override
-    public void decode(PacketBuffer from) {
-        pos = BlockPos.of(from.readLong());
-    }
-
-    @Override
-    public void handle(PlayerEntity player) {
-        //TODO: player.level.markBlockRangeForRenderUpdate(pos, pos);
     }
 }

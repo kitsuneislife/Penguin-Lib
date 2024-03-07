@@ -1,22 +1,20 @@
 package uk.joshiejack.penguinlib.client.gui.book.widget;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import uk.joshiejack.penguinlib.client.gui.Chatter;
-import uk.joshiejack.penguinlib.note.Note;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.NotNull;
+import uk.joshiejack.penguinlib.client.gui.PenguinFonts;
+import uk.joshiejack.penguinlib.client.gui.SimpleChatter;
+import uk.joshiejack.penguinlib.world.note.Note;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-@OnlyIn(Dist.CLIENT)
-public class NoteWidget extends Widget {
-    private static final ITextComponent EMPTY = new StringTextComponent("");
-    private Chatter chatter;
+public class NoteWidget extends AbstractWidget {
+    private static final Component EMPTY = Component.empty();
+    private SimpleChatter chatter;
     private Note note;
 
     public NoteWidget(int x, int y, int w, int h, NoteWidget previous) {
@@ -27,15 +25,20 @@ public class NoteWidget extends Widget {
 
     @Nonnull
     @Override
-    public ITextComponent getMessage() {
+    public Component getMessage() {
         return note.getTitle();
+    }
+
+    @Override
+    protected void updateWidgetNarration(@NotNull NarrationElementOutput narration) {
+        //TODO: Narration
     }
 
     public Note getNote() {
         return note;
     }
 
-    public Chatter getChatter() {
+    public SimpleChatter getChatter() {
         return chatter;
     }
 
@@ -43,26 +46,21 @@ public class NoteWidget extends Widget {
         return alpha;
     }
 
-    public void set(@Nonnull Note note, @Nullable Chatter chatter) {
-        Minecraft mc = Minecraft.getInstance();
+    public void set(@Nonnull Note note, @Nullable SimpleChatter chatter) {
         this.note = note; //Update the stuff
-        boolean unicode = mc.options.forceUnicodeFont;
-        mc.options.forceUnicodeFont = true;
         if (chatter == null) {
-            this.chatter = new Chatter(note.getNoteType().getText(note))
+            this.chatter = new SimpleChatter(note.getNoteType().getText(note))
                     .withWidth(note.getNoteType().getTextWidth())
                     .withLines(note.getNoteType().getLineCount())
                     .withHeight(8).withFormatting(note.getNoteType().getTextFormatting())
                     .setInstant();
-            this.chatter.update(mc.font);
+            this.chatter.update(PenguinFonts.UNICODE.get());
         } else this.chatter = chatter;
-
-        mc.options.forceUnicodeFont = unicode;
     }
 
     @Override
-    public void renderButton(@Nonnull MatrixStack matrix, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         if (note != null)
-            note.getNoteType().render(matrix, this, mouseX, mouseY);
+            note.getNoteType().render(graphics, this, mouseX, mouseY);
     }
 }

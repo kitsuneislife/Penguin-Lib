@@ -1,70 +1,76 @@
 package uk.joshiejack.penguinlib.util.icon;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import uk.joshiejack.penguinlib.client.renderer.ShadowRenderer;
 
 import java.util.List;
 import java.util.Random;
 
-public abstract class AbstractCyclicIcon<T> extends Icon {
+public abstract class AbstractCyclicIcon<T extends Icon> extends Icon {
     private static final Random random = new Random(System.currentTimeMillis());
-    protected final List<T> list;
+    final List<T> icons;
     protected T object;
     private long timer;
     private int id;
 
-    public AbstractCyclicIcon(List<T> icons) {
-        this.list = icons;
-        this.id = list.isEmpty() ? 0 : random.nextInt(list.size());
-        this.object = list.isEmpty() ? null : list.get(id);
+    public AbstractCyclicIcon(Type type, List<T> icons, int count) {
+        super(type, count);
+        this.icons = icons;
+        this.id = this.icons.isEmpty() ? 0 : random.nextInt(this.icons.size());
+        this.object = this.icons.isEmpty() ? null : this.icons.get(id);
         this.timer = System.currentTimeMillis();
+    }
+
+
+    @Override
+    public Icon setCount(int count) {
+        icons.forEach(icon -> icon.setCount(count));
+        return this;
     }
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    public void render(Minecraft mc, MatrixStack matrix, int x, int y) {
+    public void render(Minecraft mc, GuiGraphics graphics, int x, int y) {
         if (object == null) return;
         if (System.currentTimeMillis() - timer > 1000) {
             id++;
 
-            if (id >= list.size())
+            if (id >= icons.size())
                 id = 0;
-            object = list.get(id);
+            object = icons.get(id);
             timer = System.currentTimeMillis();
         }
 
-        renderCyclicIcon(mc, matrix, x, y);
+        renderCyclicIcon(mc, graphics, x, y);
     }
 
     @OnlyIn(Dist.CLIENT)
-    protected abstract void renderCyclicIcon(Minecraft mc, MatrixStack matrixStack, int x, int y);
+    protected abstract void renderCyclicIcon(Minecraft mc, GuiGraphics graphics, int x, int y);
 
-    public abstract static class ItemStack extends AbstractCyclicIcon<net.minecraft.item.ItemStack> {
-        public ItemStack(List<net.minecraft.item.ItemStack> list) {
-            super(list);
+    public abstract static class ItemStack extends AbstractCyclicIcon<ItemIcon> {
+        public ItemStack(Type type, List<ItemIcon> list, int count) {
+            super(type, list, count);
         }
 
         @OnlyIn(Dist.CLIENT)
         @Override
-        public void renderCyclicIcon(Minecraft mc, MatrixStack matrix, int x, int y) {
+        public void renderCyclicIcon(Minecraft mc, GuiGraphics graphics, int x, int y) {
             if (shadowed) ShadowRenderer.enable();
-            mc.getItemRenderer().renderGuiItem(object, x, y);
+            object.render(mc, graphics, x, y);
             if (shadowed) {
                 ShadowRenderer.disable();
                 shadowed = false;
             }
         }
 
-        @OnlyIn(Dist.CLIENT)
         @Override
-        public List<ITextComponent> getTooltipLines(PlayerEntity player) {
-            return object.getTooltipLines(player, ITooltipFlag.TooltipFlags.NORMAL);
+        public List<Component> getTooltipLines(Player player) {
+            return object.getTooltipLines(player);
         }
     }
 }

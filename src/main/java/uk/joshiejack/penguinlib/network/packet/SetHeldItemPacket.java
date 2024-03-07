@@ -1,38 +1,40 @@
 package uk.joshiejack.penguinlib.network.packet;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.Hand;
-import net.minecraftforge.fml.network.NetworkDirection;
-import uk.joshiejack.penguinlib.network.PenguinPacket;
-import uk.joshiejack.penguinlib.util.PenguinLoader;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import uk.joshiejack.penguinlib.PenguinLib;
+import uk.joshiejack.penguinlib.util.registry.Packet;
 
-@PenguinLoader.Packet(NetworkDirection.PLAY_TO_CLIENT)
-public class SetHeldItemPacket extends PenguinPacket {
-    private Hand hand;
-    private ItemStack stack;
+@Packet(PacketFlow.CLIENTBOUND)
+public record SetHeldItemPacket(InteractionHand hand, ItemStack stack) implements PenguinPacket {
+    public static final ResourceLocation ID = PenguinLib.prefix("set_held_item");
+    @Override
+    public @NotNull ResourceLocation id() {
+        return ID;
+    }
 
-    public SetHeldItemPacket() {}
-    public SetHeldItemPacket(Hand hand, ItemStack stack) {
+    public SetHeldItemPacket(InteractionHand hand, ItemStack stack) {
         this.hand = hand;
         this.stack = stack;
     }
 
-    @Override
-    public void encode(PacketBuffer to) {
-        to.writeByte(hand.ordinal());
-        to.writeItemStack(stack, false);
+    public SetHeldItemPacket(FriendlyByteBuf from) {
+        this(from.readEnum(InteractionHand.class), from.readItem());
     }
 
     @Override
-    public void decode(PacketBuffer from) {
-        hand = Hand.values()[from.readByte()];
-        stack = from.readItem();
+    public void write(FriendlyByteBuf to) {
+        to.writeEnum(hand);
+        to.writeItem(stack);
     }
 
     @Override
-    public void handle(PlayerEntity player) {
+    public void handle(Player player) {
         player.setItemInHand(hand, stack);
     }
 }

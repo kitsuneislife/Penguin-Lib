@@ -3,113 +3,74 @@ package uk.joshiejack.penguinlib.data.database;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.gson.JsonObject;
-import net.minecraft.client.resources.ReloadListener;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipeSerializer;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.profiler.IProfiler;
-import net.minecraft.resources.IResource;
-import net.minecraft.resources.IResourceManager;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.AddReloadListenerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.ForgeRegistryEntry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import uk.joshiejack.penguinlib.PenguinConfig;
 import uk.joshiejack.penguinlib.PenguinLib;
-import uk.joshiejack.penguinlib.data.PenguinRegistries;
-import uk.joshiejack.penguinlib.events.DatabaseLoadedEvent;
-import uk.joshiejack.penguinlib.events.DatabasePopulateEvent;
-import uk.joshiejack.penguinlib.item.crafting.SimplePenguinRecipe;
+import uk.joshiejack.penguinlib.event.DatabaseLoadedEvent;
+import uk.joshiejack.penguinlib.event.DatabasePopulateEvent;
+import uk.joshiejack.penguinlib.network.PenguinNetwork;
+import uk.joshiejack.penguinlib.network.packet.SyncDatabasePacket;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Mod.EventBusSubscriber(modid = PenguinLib.MODID)
-public class Database extends ReloadListener<Map<String, Table>> {
+public class Database implements ResourceManagerReloadListener {
     public static final Database INSTANCE = new Database();
     private static final Logger LOGGER = LogManager.getLogger();
     public static final int pathSuffixLength = ".csv".length();
-    private static final String directory = "database";
-    private static final int dirLength = directory.length() + 1;
-    private final Multimap<String, String> tableData = HashMultimap.create();
+    private static final int dirLength = PenguinLib.DATABASE_FOLDER.length() + 1;
+    public final Multimap<String, String> tableData = HashMultimap.create();
 
-    public static class Dummy extends SimplePenguinRecipe {
-        public static final ResourceLocation ALL = new ResourceLocation(PenguinLib.MODID, "all");
-
-        public Dummy() {
-            super(PenguinRegistries.DATABASE, PenguinRegistries.DATABASE_SERIALIZER.get(), ALL, Ingredient.EMPTY, ItemStack.EMPTY);
+    @SubscribeEvent
+    public static void onDataPack(OnDatapackSyncEvent event) {
+        if (event.getPlayer() != null)
+            PenguinNetwork.sendToClient(event.getPlayer(), new SyncDatabasePacket(INSTANCE));
+        else {
+            event.getPlayerList().getPlayers().forEach(player ->
+                    PenguinNetwork.sendToClient(player, new SyncDatabasePacket(INSTANCE)));
         }
     }
 
-    public static class Serializer extends ForgeRegistryEntry<IRecipeSerializer<?>> implements IRecipeSerializer<Database.Dummy> {
-        @Nonnull
-        @Override
-        public Dummy fromJson(@Nonnull ResourceLocation rl, @Nonnull JsonObject json) {
-            return new Dummy();
-        }
+    @SubscribeEvent
+    public static void registerData(AddReloadListenerEvent event) {
+        event.addListener(INSTANCE);
+    }
 
-        @Nullable
-        @Override
-        public Dummy fromNetwork(@Nonnull ResourceLocation rl, @Nonnull PacketBuffer packetbuffer) {
-            Map<String, Table> tables = new HashMap<>();
-            INSTANCE.tableData.clear(); //Refresh the data
-            int tableCount = packetbuffer.readShort();
-            for (int i = 0; i < tableCount; i++) {
-                String name = packetbuffer.readUtf();
-                int parts = packetbuffer.readShort();
-                StringBuilder builder = new StringBuilder();
-                for (int j = 0; j < parts; j++)
-                    builder.append(packetbuffer.readUtf());
-                parseCSV(tables, INSTANCE.tableData, name, builder.toString());
-            }
-
-            if (PenguinLib.PenguinConfig.enableDatabaseDebugger.get())
-                print(tables);
-            MinecraftForge.EVENT_BUS.post(new DatabasePopulateEvent(tables));
-            MinecraftForge.EVENT_BUS.post(new DatabaseLoadedEvent(tables));
-            return new Dummy();
-        }
-
-        @Override
-        public void toNetwork(@Nonnull PacketBuffer packetbuffer, @Nonnull Dummy dummy) {
-            int tableCount = INSTANCE.tableData.size();
-            packetbuffer.writeShort(tableCount);
-            for (Map.Entry<String, String> entry: INSTANCE.tableData.entries()) {
-                packetbuffer.writeUtf(entry.getKey());
-                int parts = (int) Math.ceil((double)entry.getValue().length() / (double) Short.MAX_VALUE);
-                packetbuffer.writeShort(parts);
-                for (int j = 0; j < parts; j++)
-                    packetbuffer.writeUtf(entry.getValue().substring(j * Short.MAX_VALUE, Math.min((j + 1) * Short.MAX_VALUE, entry.getValue().length())));
-            }
-        }
+    public void set(Database database) {
+        tableData.clear();
+        tableData.putAll(database.tableData);
     }
 
     public static void print(Map<String, Table> tables) {
+        LOGGER.info("############## DATABASE ##############");
         for (String table: tables.keySet()) {
             LOGGER.info("############## TABLE: " + table +   " ##############");
             LOGGER.info(tables.get(table).labelset());
 
             tables.get(table).rows().forEach(r -> {
                 List<String> arr = new ArrayList<>();
-                tables.get(table).labels().forEach(header -> arr.add(r.get(header)));
+                tables.get(table).labels().forEach(header -> arr.add(r.get(header).toString()));
                 LOGGER.info(Arrays.toString(arr.toArray()));
             });
         }
-    }
-
-    @SubscribeEvent
-    public static void registerData(AddReloadListenerEvent event) {
-        event.addListener(new Database());
     }
 
     @Nonnull
@@ -133,7 +94,7 @@ public class Database extends ReloadListener<Map<String, Table>> {
         }
     }
 
-    private static void parseCSV(Map<String, Table> tables, Multimap<String, String> tableData, String name, String csv) {
+    public static void parseCSV(Map<String, Table> tables, Multimap<String, String> tableData, String name, String csv) {
         //Ignore any directories registered for this csv and just go with the name
         String file_name = new File(name).getName();
         name = (file_name.startsWith("$") ? file_name.replace("$", "") : file_name.contains("$") ? file_name.split("\\$")[1] : file_name).toLowerCase(Locale.ROOT); //Ignore anything before the dollar symbol
@@ -155,41 +116,40 @@ public class Database extends ReloadListener<Map<String, Table>> {
         }
     }
 
-    private static void loadData(Map<String, Table> tables, IResourceManager rm, ResourceLocation rl) {
-        String path = rl.getPath();
+    private static void loadData(Map<String, Table> tables, ResourceLocation rl, Resource resource) {
         try {
-            IResource resource = rm.getResource(rl);
-            InputStream is = resource.getInputStream();
+            InputStream is = resource.open();
             Reader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-            parseCSV(tables, INSTANCE.tableData, path.substring(dirLength, path.length() - pathSuffixLength), IOUtils.toString(reader));
+            parseCSV(tables, INSTANCE.tableData, rl.getPath().substring(dirLength, rl.getPath().length() - pathSuffixLength), IOUtils.toString(reader));
         } catch (IllegalArgumentException | IOException ex){
             LOGGER.error("Couldn't parse data file from {}", rl, ex);
         }
     }
 
-    public static Table loadTable(@Nonnull IResourceManager rm, String table) {
+    public static Table loadTable(@Nonnull ResourceManager rm, String table) {
         Map<String, Table> tables = new HashMap<>();
-        rm.listResources(directory, (fileName) -> fileName.endsWith(table + ".csv")).forEach(rl -> loadData(tables, rm, rl));
+        rm.listResources(PenguinLib.DATABASE_FOLDER, (fileName) -> fileName.toString().endsWith(".csv")).forEach((rl, rs) -> loadData(tables, rl, rs));
         return tables.getOrDefault(table, Table.EMPTY);
     }
 
-    @Nonnull
     @Override
-    public Map<String, Table> prepare(@Nonnull IResourceManager rm, @Nonnull IProfiler profiler) {
+    public void onResourceManagerReload(@NotNull ResourceManager rm) {
         Map<String, Table> tables = new HashMap<>();
         tableData.clear(); //Remove the table data instance
-        for (ResourceLocation rl : rm.listResources(directory, (fileName) -> fileName.endsWith(".csv"))) {
-            loadData(tables, rm, rl);
-        }
-
-        return tables;
-    }
-
-    @Override
-    protected void apply(@Nonnull Map<String, Table> tables, @Nonnull IResourceManager rm, @Nonnull IProfiler profiler) {
-        if (PenguinLib.PenguinConfig.enableDatabaseDebugger.get())
+        List<ModContainer> sorted = ModList.get().getSortedMods();
+        rm.listResources(PenguinLib.DATABASE_FOLDER, (fileName) -> fileName.toString().endsWith(".csv"))
+                .entrySet().stream().sorted((r1, r2) -> {
+                    //Force the database to process resources in the order of the mods
+                    String modid1 = r1.getKey().getNamespace();
+                    String modid2 = r2.getKey().getNamespace();
+                    int index1 = sorted.indexOf(ModList.get().getModContainerById(modid1).orElse(null));
+                    int index2 = sorted.indexOf(ModList.get().getModContainerById(modid2).orElse(null));
+                    return index1 - index2;
+                })
+                .forEach(r -> loadData(tables, r.getKey(), r.getValue()));
+        if (PenguinConfig.enableDatabaseDebugger.get())
             print(tables);
-        MinecraftForge.EVENT_BUS.post(new DatabasePopulateEvent(tables));
-        MinecraftForge.EVENT_BUS.post(new DatabaseLoadedEvent(tables));
+        NeoForge.EVENT_BUS.post(new DatabasePopulateEvent(tables));
+        NeoForge.EVENT_BUS.post(new DatabaseLoadedEvent(tables));
     }
 }

@@ -1,46 +1,47 @@
 package uk.joshiejack.penguinlib.network.packet;
 
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.network.NetworkDirection;
-import uk.joshiejack.penguinlib.network.PenguinPacket;
-import uk.joshiejack.penguinlib.util.PenguinLoader;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import org.jetbrains.annotations.NotNull;
+import uk.joshiejack.penguinlib.PenguinLib;
+import uk.joshiejack.penguinlib.client.PenguinTeamsClient;
+import uk.joshiejack.penguinlib.util.registry.Packet;
 
 import java.util.UUID;
 
-@PenguinLoader.Packet(NetworkDirection.PLAY_TO_CLIENT)
-public class ChangeTeamPacket extends PenguinPacket {
-    private UUID player, oldTeam, newTeam;
+@Packet(value = PacketFlow.CLIENTBOUND)
+public class ChangeTeamPacket implements PenguinPacket {
+    public static final ResourceLocation ID = PenguinLib.prefix("change_team");
+    private final UUID player;
+    private final UUID oldTeam;
+    private final UUID newTeam;
 
-    public ChangeTeamPacket() {}
     public ChangeTeamPacket(UUID player, UUID oldTeam, UUID newTeam) {
         this.player = player;
         this.oldTeam = oldTeam;
         this.newTeam = newTeam;
     }
 
+    public ChangeTeamPacket(FriendlyByteBuf buf) {
+        this(buf.readUUID(), buf.readUUID(), buf.readUUID());
+    }
+
     @Override
-    public void encode(PacketBuffer to) {
+    public void write(FriendlyByteBuf to) {
         to.writeUUID(player);
         to.writeUUID(oldTeam);
         to.writeUUID(newTeam);
     }
 
     @Override
-    public void decode(PacketBuffer from) {
-        player = from.readUUID();
-        oldTeam = from.readUUID();
-        newTeam = from.readUUID();
+    public @NotNull ResourceLocation id() {
+        return ID;
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
-    public void handleClientPacket() {
-        //TODO: PenguinTeamsClient.changeTeam(player, oldTeam, newTeam);
-        //GuiScreen screen = Minecraft.getMinecraft().currentScreen;
-        //if (screen instanceof GuiBook) {
-          //  ((GuiBook)screen).setPage(((GuiBook)screen).getPage());
-        //}
+    public void handle(Player clientPlayer) {
+        PenguinTeamsClient.changeTeam(player, oldTeam, newTeam);
     }
 }

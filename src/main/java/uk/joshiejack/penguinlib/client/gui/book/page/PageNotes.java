@@ -1,26 +1,24 @@
 package uk.joshiejack.penguinlib.client.gui.book.page;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.world.entity.player.Player;
 import uk.joshiejack.penguinlib.client.gui.book.Book;
 import uk.joshiejack.penguinlib.client.gui.book.widget.ArrowButton;
 import uk.joshiejack.penguinlib.client.gui.book.widget.NoteButton;
 import uk.joshiejack.penguinlib.client.gui.book.widget.NoteWidget;
 import uk.joshiejack.penguinlib.data.PenguinRegistries;
-import uk.joshiejack.penguinlib.note.Category;
-import uk.joshiejack.penguinlib.note.Note;
 import uk.joshiejack.penguinlib.util.icon.Icon;
+import uk.joshiejack.penguinlib.world.note.Category;
+import uk.joshiejack.penguinlib.world.note.Note;
 
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@OnlyIn(Dist.CLIENT)
-public class PageNotes extends AbstractMultiPage.Right<Note> {
+public class PageNotes extends AbstractMultiPage.Left<Note> {
     private final Category category;
-    private Predicate<Note> filter = (n) -> true;
+    private final Predicate<Note> filter = (n) -> true;
     public NoteWidget note;
 
     public PageNotes(Category category) {
@@ -34,46 +32,47 @@ public class PageNotes extends AbstractMultiPage.Right<Note> {
     }
 
     @Override
-    public void initLeft(Book book, int left, int top) {
+    public void initRight(Book book, int left, int top) {
         note = new NoteWidget(left + 18, top, 130, 20, note);
-        book.addButton(note);
+        book.addRenderableOnly(note);
         if (note.getNote() != null) {
             if (note.getChatter().getPage() < note.getChatter().getMaxPage())
-                book.addButton(new ArrowButton.Right(book, left + 130, top + 154, (button) -> {
+                book.addRenderableWidget(new ArrowButton.Right(book, left + 130, top + 154, (button) -> {
                     note.getChatter().mouseClicked(0);
                     note.getChatter().update(book.minecraft().font);
-                    book.init(book.minecraft(), book.width, book.height);
+                    book.markChanged();
                 }));
 
             if (note.getChatter().getPage() > 0)
-                book.addButton(new ArrowButton.Left(book, left + 20, top + 154, (button) -> {
+                book.addRenderableWidget(new ArrowButton.Left(book, left + 20, top + 154, (button) -> {
                     note.getChatter().mouseClicked(1);
                     note.getChatter().update(book.minecraft().font);
-                    book.init(book.minecraft(), book.width, book.height);
+                    book.markChanged();
                 }));
         }
     }
 
     @Override
     protected void initEntry(Book book, int left, int top, int id, Note note) {
-        book.addButton(new NoteButton(book, this.note.getNote(), note, left + 8 + ((id % 7) * 18), top + 8 + ((id / 7) * 18),
+        book.addRenderableWidget(new NoteButton(book, this.note, note, left + 18 + ((id % 7) * 18), top + 8 + ((id / 7) * 18),
                 (button) -> {
                     if (note.isDefault() || note.isUnlocked(Minecraft.getInstance().player)) {
                         this.note.set(note, null); //Set the page to this and mark as read
-                        book.init(book.minecraft(), book.width, book.height); //Reinit the book
+
+                        book.markChanged(); //Reinit the book
                         note.read(Minecraft.getInstance().player);
                     }
                 },
-                createTooltip(book, note.getTitle())));
+                note.isDefault() || note.isUnlocked(Minecraft.getInstance().player) ? Tooltip.create(note.getTitle()) : null));
     }
 
     @Override
     protected List<Note> getEntries() {
-        PlayerEntity player = Minecraft.getInstance().player;
+        Player player = Minecraft.getInstance().player;
         assert player != null;
-        return player.level.getRecipeManager().getAllRecipesFor(PenguinRegistries.NOTE).stream()
-                .filter(n -> n.getCategory().equals(category.getId()))
-                .filter(n -> this.filter.test(n))
+        return PenguinRegistries.NOTES.stream()
+                .filter(n -> n.getCategory().equals(PenguinRegistries.CATEGORIES.getID(category)))
+                .filter(this.filter)
                 .filter(n -> !n.isHidden() || n.isUnlocked(player) || n.isDefault())
                 .collect(Collectors.toList());
     }

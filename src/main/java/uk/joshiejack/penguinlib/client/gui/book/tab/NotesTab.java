@@ -1,10 +1,8 @@
 package uk.joshiejack.penguinlib.client.gui.book.tab;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import uk.joshiejack.penguinlib.client.gui.book.page.AbstractPage;
 import uk.joshiejack.penguinlib.client.gui.book.page.PageNotes;
 import uk.joshiejack.penguinlib.data.PenguinRegistries;
@@ -14,11 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@OnlyIn(Dist.CLIENT)
 public class NotesTab extends Tab {
     private final List<ResourceLocation> valid = new ArrayList<>();
 
-    public NotesTab(ITextComponent name, Icon icon) {
+    public NotesTab(Component name, Icon icon) {
         super(name, icon);
     }
 
@@ -30,16 +27,16 @@ public class NotesTab extends Tab {
     //Use the list to get the default page instead
     @Override
     public AbstractPage getPage() {
-        if (this.page == null || page == AbstractPage.EMPTY)
+        if (this.page == null || page == AbstractPage.Basic.EMPTY)
             this.page = getPages().get(0);
         return this.page;
     }
 
     @Override
     protected List<AbstractPage> getPages() {
-        return Minecraft.getInstance().level.getRecipeManager()
-                .getAllRecipesFor(PenguinRegistries.CATEGORY).stream()
-                .filter(c -> valid.isEmpty() || valid.contains(c.getId()))
+        assert Minecraft.getInstance().level != null;
+        return PenguinRegistries.CATEGORIES.stream()
+                .filter(c -> valid.isEmpty() || valid.contains(PenguinRegistries.CATEGORIES.getID(c)))
                 .map(PageNotes::new)
                 .collect(Collectors.toList());
     }

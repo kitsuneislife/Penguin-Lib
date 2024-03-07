@@ -1,45 +1,52 @@
 package uk.joshiejack.penguinlib.util.icon;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ExtraCodecs;
+import net.minecraft.world.entity.player.Player;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import uk.joshiejack.penguinlib.client.gui.GuiUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class TextureIcon extends Icon {
-    private static final List<ITextComponent> EMPTY_LIST = new ArrayList<>();
-    private final ResourceLocation texture;
-    private final int xPos;
-    private final int yPos;
+    public static final Codec<TextureIcon> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            ResourceLocation.CODEC.fieldOf("texture").forGetter(icon -> icon.texture),
+            Codec.INT.fieldOf("x").forGetter(icon -> icon.xPos),
+            Codec.INT.fieldOf("y").forGetter(icon -> icon.yPos),
+            ExtraCodecs.POSITIVE_INT.optionalFieldOf("count", 1).forGetter(icon -> icon.count)
+    ).apply(instance, TextureIcon::new));
+    private static final List<Component> EMPTY_LIST = new ArrayList<>();
+    final ResourceLocation texture;
+    final int xPos;
+    final int yPos;
+    private int count;
 
-    public TextureIcon(ResourceLocation texture, int x, int y) {
+    public TextureIcon(ResourceLocation texture, int x, int y, int count) {
+        super(Type.TEXTURE, count);
         this.texture = texture;
         this.xPos = x;
         this.yPos = y;
     }
 
-    @Override
-    public JsonElement toJson(JsonObject json) {
-        if (!texture.equals(DEFAULT_LOCATION))
-            json.addProperty("texture", texture.toString());
-        if (xPos != 0)
-            json.addProperty("x", xPos);
-        if (yPos != 0)
-            json.addProperty("y", yPos);
-        return json;
+    public TextureIcon(FriendlyByteBuf buf) {
+        this(buf.readBoolean() ? buf.readResourceLocation() : DEFAULT_LOCATION, buf.readShort(), buf.readShort(),buf.readInt());
     }
 
     @Override
-    public void toNetwork(PacketBuffer pb) {
-        pb.writeByte(Icon.Type.TEXTURE.ordinal());
+    public Codec<? extends Icon> codec() {
+        return CODEC;
+    }
+
+    @Override
+    public void toNetwork(FriendlyByteBuf pb) {
         if (texture.equals(DEFAULT_LOCATION))
             pb.writeBoolean(false);
         else {
@@ -47,22 +54,28 @@ public class TextureIcon extends Icon {
             pb.writeResourceLocation(texture);
         }
 
-        pb.writeInt(xPos);
-        pb.writeInt(yPos);
+        pb.writeShort(xPos);
+        pb.writeShort(yPos);
+        pb.writeInt(originalCount);
     }
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    public void render(Minecraft mc, MatrixStack matrix, int x, int y) {
-        mc.getTextureManager().bind(texture);
-        mc.gui.setBlitOffset(0);
-        mc.gui.blit(matrix, x, y, xPos, shadowed ? yPos + 16 : yPos, 16, 16);
+    public void render(Minecraft mc, GuiGraphics graphics, int x, int y) {
+//        mc.gui.setBlitOffset(0); //TODO check this
+        graphics.blit(texture, x, y, xPos, shadowed ? yPos + 16 : yPos, 16, 16);
+        GuiUtils.renderIconDecorations(graphics, mc.font, x, y, count);
         shadowed = false;
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
-    public List<ITextComponent> getTooltipLines(PlayerEntity player) {
+    public Icon setCount(int count) {
+        this.count = count;
+        return this;
+    }
+
+    @Override
+    public List<Component> getTooltipLines(Player player) {
         return EMPTY_LIST;
     }
 }

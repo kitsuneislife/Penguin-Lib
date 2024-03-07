@@ -21,16 +21,5 @@
   "command.penguinlib.team.leave.success": "You have left your team!",
   "command.penguinlib.team.reject.not_exist": "No team with the name %s can be found!",
   "command.penguinlib.team.reject.not_invited": "You have not been invited to join %s!",
-  "command.penguinlib.team.reject.success": "You have rejected the invite to join %s.",
-  "item.penguinlib.deep_bowl": "Deep Bowl",
-  "item.penguinlib.glass": "Glass",
-  "item.penguinlib.jam_jar": "Jam Jar",
-  "item.penguinlib.mug": "Mug",
-  "item.penguinlib.penguin_banner_pattern": "Banner Pattern",
-  "item.penguinlib.penguin_banner_pattern.desc": "Penguin",
-  "item.penguinlib.pickling_jar": "Pickling Jar",
-  "item.penguinlib.plate": "Plate",
-  "item.penguinlib.unfired_mug": "Unfired Mug",
-  "item.penguinlib.unfired_plate": "Unfired Plate",
-  "itemGroup.penguinlib": "Penguin-Lib"
+  "command.penguinlib.team.reject.success": "You have rejected the invite to join %s."
 }

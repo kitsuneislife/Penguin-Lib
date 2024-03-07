@@ -1,60 +1,65 @@
 package uk.joshiejack.penguinlib.util.icon;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.ExtraCodecs;
+import net.minecraft.world.entity.player.Player;
 import uk.joshiejack.penguinlib.client.renderer.ShadowRenderer;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ListIcon extends AbstractCyclicIcon<Icon> {
-    public static final Icon EMPTY = new ListIcon(new ArrayList<>());
+    public static final Icon EMPTY = new ListIcon(new ArrayList<>(), 1);
+    public static final Codec<ListIcon> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.list(Icon.CODEC).fieldOf("icons").forGetter(i -> i.icons),
+            ExtraCodecs.POSITIVE_INT.optionalFieldOf("count", 1).forGetter(i -> i.originalCount)
+            ).apply(instance, ListIcon::new));
 
     public ListIcon(List<Icon> icons) {
-        super(icons);
+        super(Type.LIST, icons, 1);
     }
 
-    @Override
-    public JsonElement toJson(JsonObject json) {
-        JsonArray array = new JsonArray();
-        for (Icon icon: list) {
-            JsonObject data = new JsonObject();
-            icon.toJson(data);
-            array.add(data);
+    public ListIcon(List<Icon> icons, int count) {
+        super(Type.LIST, icons, count);
+    }
+
+    public ListIcon(FriendlyByteBuf buf) {
+        super(Type.LIST, new ArrayList<>(), buf.readInt());
+        int size = buf.readInt();
+        for (int i = 0; i < size; i++) {
+            icons.add(Icon.Type.values()[buf.readByte()].apply(buf)); //Hmm
         }
-
-        json.add("icon_list", array);
-        return json;
     }
 
     @Override
-    public void toNetwork(PacketBuffer pb) {
-        pb.writeByte(Type.ITEM_LIST.ordinal());
-        pb.writeShort(list.size());
-        list.forEach(icon -> icon.toNetwork(pb));
+    public Codec<? extends Icon> codec() {
+        return CODEC;
     }
 
     @Override
-    protected void renderCyclicIcon(Minecraft mc, MatrixStack matrixStack, int x, int y) {
+    public void toNetwork(FriendlyByteBuf pb) {
+        pb.writeInt(originalCount);
+        pb.writeShort(icons.size());
+        icons.forEach(icon -> icon.toNetwork(pb));
+    }
+
+    @Override
+    protected void renderCyclicIcon(Minecraft mc, GuiGraphics graphics, int x, int y) {
         if (shadowed) ShadowRenderer.enable();
-        object.render(mc, matrixStack, x, y);
+        object.render(mc, graphics, x, y);
         if (shadowed) {
             ShadowRenderer.disable();
             shadowed = false;
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
-    public List<ITextComponent> getTooltipLines(PlayerEntity player) {
+    public List<Component> getTooltipLines(Player player) {
         return object.getTooltipLines(player);
     }
 }

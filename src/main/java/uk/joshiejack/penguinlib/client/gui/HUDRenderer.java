@@ -1,50 +1,65 @@
 package uk.joshiejack.penguinlib.client.gui;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.util.RegistryKey;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.world.World;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
 import uk.joshiejack.penguinlib.PenguinLib;
 import uk.joshiejack.penguinlib.client.PenguinClientConfig;
 import uk.joshiejack.penguinlib.util.PenguinTags;
-import uk.joshiejack.penguinlib.util.helpers.PlayerHelper;
-import uk.joshiejack.penguinlib.util.helpers.TimeHelper;
+import uk.joshiejack.penguinlib.util.helper.PlayerHelper;
+import uk.joshiejack.penguinlib.util.helper.TimeHelper;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-@OnlyIn(Dist.CLIENT)
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = PenguinLib.MODID)
+@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = PenguinLib.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class HUDRenderer {
-    public static Object2ObjectMap<RegistryKey<World>, HUDRenderData> RENDERERS = new Object2ObjectOpenHashMap<>();
+    public static Object2ObjectMap<ResourceKey<Level>, HUDRenderData> RENDERERS = new Object2ObjectOpenHashMap<>();
 
     public abstract static class HUDRenderData {
-        public boolean isEnabled(Minecraft mc) { return true; }
+        public boolean isEnabled(Minecraft mc) {
+            return true;
+        }
 
         @Nullable
-        public ResourceLocation getTexture(Minecraft mc) { return null; }
-        public abstract ITextComponent getHeader(Minecraft mc);
+        public ResourceLocation getTexture(Minecraft mc) {
+            return null;
+        }
+
+        public abstract Component getHeader(Minecraft mc);
+
         public String getFooter(Minecraft mc) {
             String time = formatTime((int) TimeHelper.getTimeOfDay(mc.level.getDayTime()));
             return "(" + TimeHelper.shortName(TimeHelper.getWeekday(mc.level.getDayTime())) + ")" + "  " + time;
         }
 
-        public int getX() { return 0; }
-        public int getY() { return 0; }
-        public int getClockX() { return 42; }
-        public int getClockY() { return 23; }
+        public int getX() {
+            return 0;
+        }
+
+        public int getY() {
+            return 0;
+        }
+
+        public int getClockX() {
+            return 42;
+        }
+
+        public int getClockY() {
+            return 23;
+        }
     }
 
     private static String formatTime(int time) {
@@ -69,49 +84,60 @@ public class HUDRenderer {
 
     private static boolean hasClockInventory;
 
-    private static boolean hasClockInInventory(PlayerEntity player) {
-        if (player.level.getDayTime() % 60 == 0) {
+    private static boolean hasClockInInventory(Player player) {
+        if (player.level().getDayTime() % 60 == 0) {
             try {
                 hasClockInventory = PlayerHelper.hasInInventory(player, PenguinTags.CLOCKS, 1);
-            } catch (Exception ex) { hasClockInventory = false; }
+            } catch (Exception ex) {
+                hasClockInventory = false;
+            }
         }
         return hasClockInventory;
     }
 
     @SubscribeEvent
-    public static void onRenderOverlay(RenderGameOverlayEvent.Pre event) {
-        if (RENDERERS.size() == 0) return;
-        Minecraft mc = Minecraft.getInstance();
-        if (event.getType() == RenderGameOverlayEvent.ElementType.ALL) {
-            HUDRenderData hud = RENDERERS.get(mc.level.dimension());
-            if (hud != null) {
-                MatrixStack matrix = event.getMatrixStack();
-                RenderSystem.enableBlend();
-                int x = hud.getX();
-                int y = hud.getY();
-                if (hud.isEnabled(mc)) {
-                    ResourceLocation texture = hud.getTexture(mc);
-                    if (texture != null) {
-                        RenderSystem.color4f(1F, 1F, 1F, 1F);
-                        mc.getTextureManager().bind(texture);//inMine ? MINE_HUD : season.HUD);
-                        mc.gui.blit(matrix, x - 44, y - 35, 0, 0, 256, 110);
-                    }
-
-                    //Enlarge the Day
-                    matrix.pushPose();
-                    matrix.scale(1.4F, 1.4F, 1.4F);
-                    ITextComponent header = hud.getHeader(mc);
-                    mc.font.drawShadow(matrix, header, (x / 1.4F) + 30, (y / 1.4F) + 7, 0xFFFFFFFF);
-                    matrix.popPose();
-                }
-
-                //Draw the time
-                if (PenguinClientConfig.displayClockInHUDs.get()) {
-                    if (!PenguinClientConfig.requireClockItemForTime.get() || (PenguinClientConfig.requireClockItemForTime.get() && hasClockInInventory(Objects.requireNonNull(mc.player))))
-                        mc.font.drawShadow(matrix, hud.getFooter(mc), x + hud.getClockX(), y + hud.getClockY(), 0xFFFFFFFF);
-                }
-                RenderSystem.disableBlend();
+    public static void registerGuiOverlay(RegisterGuiOverlaysEvent event) {
+        event.registerAboveAll(new ResourceLocation(PenguinLib.MODID, "hud"), (gui, graphics, partialTick, width, height) -> {
+            if (RENDERERS.isEmpty()) return;
+            if (!gui.getMinecraft().options.hideGui) {
+                gui.setupOverlayRenderState(true, false);
+                graphics.pose().pushPose();
+                renderHUD(gui.getMinecraft(), graphics);
+                graphics.pose().popPose();
             }
+        });
+    }
+
+    private static void renderHUD(Minecraft mc, GuiGraphics graphics) {
+        if (mc.getDebugOverlay().showDebugScreen()) return;
+        HUDRenderData hud = RENDERERS.get(mc.level.dimension());
+        if (hud != null) {
+            PoseStack matrix = graphics.pose();
+            RenderSystem.enableBlend();
+            int x = hud.getX();
+            int y = hud.getY();
+            if (hud.isEnabled(mc)) {
+                ResourceLocation texture = hud.getTexture(mc);
+                if (texture != null) {
+                    RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+                    //mc.getTextureManager().bindForSetup(texture);//inMine ? MINE_HUD : season.HUD);
+                    graphics.blit(texture, x - 44, y - 35, 0, 0, 256, 110);
+                }
+
+                //Enlarge the Day
+                matrix.pushPose();
+                matrix.scale(1.4F, 1.4F, 1.4F);
+                Component header = hud.getHeader(mc);
+                graphics.drawString(mc.font, header, (int)(x / 1.4F) + 30, (int)(y / 1.4F) + 7, 0xFFFFFFFF);
+                matrix.popPose();
+            }
+
+            //Draw the time
+            if (PenguinClientConfig.displayClockInHUDs.get()) {
+                if (!PenguinClientConfig.requireClockItemForTime.get() || (PenguinClientConfig.requireClockItemForTime.get() && hasClockInInventory(Objects.requireNonNull(mc.player))))
+                    graphics.drawString(mc.font, hud.getFooter(mc), x + hud.getClockX(), y + hud.getClockY(), 0xFFFFFFFF);
+            }
+            RenderSystem.disableBlend();
         }
     }
 }

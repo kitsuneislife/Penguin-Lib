@@ -1,49 +1,48 @@
 package uk.joshiejack.penguinlib.client.gui;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gui.screen.inventory.ContainerScreen;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.container.Container;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
 
-@OnlyIn(Dist.CLIENT)
-public abstract class AbstractContainerScreen <T extends Container> extends ContainerScreen<T> {
-    protected final ResourceLocation background;
-    private final List<Runnable> futures = new ArrayList<>();
+public abstract class AbstractContainerScreen <T extends AbstractContainerMenu> extends net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<T> {
+    protected final ResourceLocation texture;
 
-    //Allow for a null background, for special purposes
-    public AbstractContainerScreen(T container, PlayerInventory inv, ITextComponent name, int width, int height) {
+    public AbstractContainerScreen(T container, Inventory inv, Component name, int width, int height) {
         this(container, inv, name, null, width, height);
     }
 
-    public AbstractContainerScreen(T container, PlayerInventory inv, ITextComponent name, ResourceLocation background, int width, int height) {
+    public AbstractContainerScreen(T container, Inventory inv, Component name, ResourceLocation texture, int width, int height) {
         super(container, inv, name);
-        this.background = background;
+        this.texture = texture;
         this.imageWidth = width;
         this.imageHeight = height;
     }
 
     @Override
-    protected void renderBg(@Nonnull MatrixStack stack, float partialTicks, int mouseX, int mouseY) {
-        RenderSystem.color4f(1F, 1F, 1F, 1F);
+    protected void init() {
+        super.init();
+        if (minecraft != null && minecraft.player != null)
+            initScreen(minecraft, minecraft.player);
     }
 
-    public void addFuture(Runnable r) {
-        futures.add(r);
-    }
+    protected abstract void initScreen(@Nonnull Minecraft minecraft, @Nonnull Player player);
 
     @Override
-    public void render(@Nonnull MatrixStack matrix, int mouseX, int mouseY, float partialTicks) {
-        super.render(matrix, mouseX, mouseY, partialTicks);
-        this.futures.forEach(Runnable::run);
-        this.futures.clear();
+    protected void renderBg(@Nonnull GuiGraphics graphics, float partialTicks, int mouseX, int mouseY) {
+        graphics.setColor(1F, 1F, 1F, 1F);
+    }
+
+    protected static ResourceLocation guiTexture(String modid, String name) {
+        return new ResourceLocation(modid, "textures/gui/%s.png".formatted(name));
+    }
+
+    protected static Component translated(String modid, String name) {
+        return Component.translatable("%s.%s.%s".formatted("gui", modid, name));
     }
 }

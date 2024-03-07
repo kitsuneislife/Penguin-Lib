@@ -1,35 +1,36 @@
 package uk.joshiejack.penguinlib.network.packet;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.network.NetworkDirection;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import org.jetbrains.annotations.NotNull;
+import uk.joshiejack.penguinlib.PenguinLib;
 import uk.joshiejack.penguinlib.data.PenguinRegistries;
-import uk.joshiejack.penguinlib.network.PenguinPacket;
-import uk.joshiejack.penguinlib.note.Note;
-import uk.joshiejack.penguinlib.util.PenguinLoader;
+import uk.joshiejack.penguinlib.network.PenguinNetwork;
+import uk.joshiejack.penguinlib.util.registry.Packet;
+import uk.joshiejack.penguinlib.world.note.Note;
 
-@PenguinLoader.Packet(NetworkDirection.PLAY_TO_SERVER)
-public class ReadNotePacket extends PenguinPacket {
-    private ResourceLocation note;
+@Packet(value = PacketFlow.CLIENTBOUND)
+public record ReadNotePacket(Note note) implements PenguinPacket {
+    public static final ResourceLocation ID = PenguinLib.prefix("read_note");
 
-    public ReadNotePacket(){}
-    public ReadNotePacket(Note note) {
-        this.note = note.getId();
+    @Override
+    public @NotNull ResourceLocation id() {
+        return ID;
+    }
+
+    public ReadNotePacket(FriendlyByteBuf buf) {
+        this(PenguinNetwork.readRegistry(PenguinRegistries.NOTES, buf));
     }
 
     @Override
-    public void encode(PacketBuffer pb) {
-        pb.writeResourceLocation(note);
+    public void write(@NotNull FriendlyByteBuf buf) {
+        PenguinNetwork.writeRegistry(note, buf);
     }
 
     @Override
-    public void decode(PacketBuffer pb) {
-        note = pb.readResourceLocation();
-    }
-
-    @Override
-    public void handle(PlayerEntity player) {
-        ((Note)player.level.getRecipeManager().recipes.get(PenguinRegistries.NOTE).get(note)).read(player);
+    public void handle(Player player) {
+        note.read(player);
     }
 }

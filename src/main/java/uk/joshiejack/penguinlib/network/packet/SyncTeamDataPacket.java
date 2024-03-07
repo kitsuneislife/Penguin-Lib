@@ -1,22 +1,34 @@
 package uk.joshiejack.penguinlib.network.packet;
 
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.network.NetworkDirection;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import org.jetbrains.annotations.NotNull;
+import uk.joshiejack.penguinlib.PenguinLib;
 import uk.joshiejack.penguinlib.client.PenguinTeamsClient;
-import uk.joshiejack.penguinlib.util.PenguinLoader;
+import uk.joshiejack.penguinlib.util.registry.Packet;
 
-@PenguinLoader.Packet(NetworkDirection.PLAY_TO_CLIENT)
-public class SyncTeamDataPacket extends AbstractSyncCompoundNBTPacket {
-    public SyncTeamDataPacket() {}
-    public SyncTeamDataPacket(CompoundNBT data) {
-        super(data);
+@Packet(PacketFlow.CLIENTBOUND)
+public class SyncTeamDataPacket extends SyncCompoundTagPacket {
+    public static final ResourceLocation ID = PenguinLib.prefix("sync_team_data");
+
+    @Override
+    public @NotNull ResourceLocation id() {
+        return ID;
     }
 
-    @OnlyIn(Dist.CLIENT)
+    public SyncTeamDataPacket(CompoundTag tag) {
+        super(tag);
+    }
+
+    public SyncTeamDataPacket(FriendlyByteBuf buf) {
+        super(buf);
+    }
+
     @Override
-    public void handleClientPacket() {
+    public void handle(Player player) {
         PenguinTeamsClient.setInstance(tag);
     }
 }

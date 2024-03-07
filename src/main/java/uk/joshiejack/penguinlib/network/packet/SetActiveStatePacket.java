@@ -1,42 +1,39 @@
 package uk.joshiejack.penguinlib.network.packet;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fml.network.NetworkDirection;
-import uk.joshiejack.penguinlib.network.PenguinPacket;
-import uk.joshiejack.penguinlib.tile.machine.AbstractMachineTileEntity;
-import uk.joshiejack.penguinlib.util.PenguinLoader;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import uk.joshiejack.penguinlib.util.registry.Packet;
+import uk.joshiejack.penguinlib.world.block.entity.machine.MachineBlockEntity;
 
-@PenguinLoader.Packet(NetworkDirection.PLAY_TO_CLIENT)
-public class SetActiveStatePacket extends PenguinPacket {
-    private BlockPos pos;
-    private boolean active;
+import javax.annotation.Nonnull;
 
-    public SetActiveStatePacket() {}
-    public SetActiveStatePacket(BlockPos pos, boolean active) {
-        this.pos = pos;
-        this.active = active;
+@Packet(PacketFlow.CLIENTBOUND)
+public record SetActiveStatePacket(BlockPos pos, boolean active) implements PenguinPacket {
+    public static final ResourceLocation ID = new ResourceLocation("penguinlib", "set_active_state");
+    @Override
+    public @Nonnull ResourceLocation id() {
+        return ID;
+    }
+
+    public SetActiveStatePacket(FriendlyByteBuf from) {
+        this(from.readBlockPos(), from.readBoolean());
     }
 
     @Override
-    public void encode(PacketBuffer to) {
+    public void write(FriendlyByteBuf to) {
         to.writeBlockPos(pos);
         to.writeBoolean(active);
     }
 
     @Override
-    public void decode(PacketBuffer from) {
-        pos = from.readBlockPos();
-        active = from.readBoolean();
-    }
-
-    @Override
-    public void handle(PlayerEntity player) {
-        TileEntity tile = player.level.getBlockEntity(pos);
-        if (tile instanceof AbstractMachineTileEntity) {
-            ((AbstractMachineTileEntity)tile).setState(active);
+    public void handle(Player player) {
+        BlockEntity tile = player.level().getBlockEntity(pos);
+        if (tile instanceof MachineBlockEntity) {
+            ((MachineBlockEntity)tile).setState(active);
         }
     }
 }

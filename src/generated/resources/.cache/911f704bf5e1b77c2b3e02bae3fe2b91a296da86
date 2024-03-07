@@ -1,0 +1,13 @@
+// 1.20.4	2024-01-20T23:26:11.1523277	Tags for minecraft:item mod id penguinlib
+0bdc999a7f653eecbb3c513a0baf1b963a2587ab data/forge/tags/items/bread.json
+b33dde3cf95c3f821d49bc84b8c46f9fd65289e8 data/forge/tags/items/crops.json
+b33dde3cf95c3f821d49bc84b8c46f9fd65289e8 data/forge/tags/items/crops/apple.json
+3fc49343f8b34a46531354a6796b3e2836a6defc data/forge/tags/items/crops/melon.json
+fb20556192c9d25a9791b8eb05837ad23fad883d data/forge/tags/items/crops/pumpkin.json
+c976a431fe457491a188b4d5fed9f589b233cd39 data/forge/tags/items/fungi.json
+8f30352bc88bb604102fe85458f0fcf898f966f3 data/forge/tags/items/raw_fishes.json
+35133e95f1c8fdd7a1c21afcc231fc0bffefb9a8 data/forge/tags/items/tools/hammers.json
+35133e95f1c8fdd7a1c21afcc231fc0bffefb9a8 data/forge/tags/items/tools/sickles.json
+35133e95f1c8fdd7a1c21afcc231fc0bffefb9a8 data/forge/tags/items/tools/watering_cans.json
+0f1bf5fb68d8a1d70d6d8ac036848ef3d3dc3b6f data/minecraft/tags/items/tools.json
+8180207eb4d779d1e1250798d7cdcd341751b533 data/penguinlib/tags/items/clocks.json

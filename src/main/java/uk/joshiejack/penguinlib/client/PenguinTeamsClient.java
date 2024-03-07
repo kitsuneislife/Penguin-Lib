@@ -2,16 +2,13 @@ package uk.joshiejack.penguinlib.client;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import uk.joshiejack.penguinlib.world.teams.PenguinTeam;
+import net.minecraft.nbt.CompoundTag;
+import uk.joshiejack.penguinlib.world.team.PenguinTeam;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
 
-@OnlyIn(Dist.CLIENT)
 public class PenguinTeamsClient {
     private static final Multimap<UUID, UUID> teamMembers = HashMultimap.create();
     private static PenguinTeam INSTANCE;
@@ -20,7 +17,7 @@ public class PenguinTeamsClient {
         return INSTANCE;
     }
 
-    public static void setInstance(CompoundNBT data) {
+    public static void setInstance(CompoundTag data) {
         INSTANCE = new PenguinTeam(data);
         INSTANCE.setClient();//Yes bitch
     }
@@ -37,5 +34,9 @@ public class PenguinTeamsClient {
 
     public static Collection<UUID> members(UUID teamID) {
         return teamMembers.get(teamID);
+    }
+
+    public static void setTag(String tagName, CompoundTag tag) {
+        INSTANCE.getData().put(tagName, tag);
     }
 }

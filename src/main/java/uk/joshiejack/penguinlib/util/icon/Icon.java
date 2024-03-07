@@ -1,106 +1,120 @@
 package uk.joshiejack.penguinlib.util.icon;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.serialization.Codec;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.util.JSONUtils;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.world.entity.player.Player;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import uk.joshiejack.penguinlib.PenguinLib;
+import uk.joshiejack.penguinlib.data.PenguinRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public abstract class Icon {
     public static final ResourceLocation DEFAULT_LOCATION = new ResourceLocation(PenguinLib.MODID, "textures/gui/icons.png");
-    protected boolean shadowed;
+    public static final Codec<Icon> CODEC = PenguinRegistries.Icons.ICON.byNameCodec().dispatchStable(Icon::codec, Function.identity());
 
-    public enum Type {
-        ITEM, TEXTURE, ENTITY, TAG, ITEM_LIST, ICON_LIST
+    public abstract Codec<? extends Icon> codec();
+
+    protected boolean shadowed;
+    private final Type type;
+    protected final int originalCount;
+
+    public Icon(Type type, int originalCount) {
+        this.type = type;
+        this.originalCount = originalCount;
     }
 
-    public Icon shadowed() {
+    public Icon shadowed () {
         this.shadowed = true;
         return this;
     }
 
-    public static Icon fromJson(JsonObject json) {
-        //Icon List
-        if (json.has("icon_list")) {
-            JsonArray array = json.getAsJsonArray("icon_list");
-            List<Icon> icons = new ArrayList<>();
-            for (int i = 0; i < array.size(); i++) {
-                icons.add(fromJson(array.get(i).getAsJsonObject()));
-            }
-
-            return new ListIcon(icons);
-        }
-
-        //List
-        if (json.has("list")) {
-            JsonArray array = json.getAsJsonArray("list");
-            List<ItemStack> items = new ArrayList<>();
-            for (int i = 0; i < array.size(); i++) {
-                Item item = ForgeRegistries.ITEMS.getValue(new ResourceLocation(array.get(i).getAsString()));
-                if (item != null)
-                    items.add(new ItemStack(item));
-            }
-
-            return new ItemListIcon(items);
-        }
-
-        //Rest
-        return json.has("item") ? new ItemIcon(new ItemStack(JSONUtils.getAsItem(json, "item")))
-                : json.has("tag") ? new TagIcon(ItemTags.createOptional(new ResourceLocation(JSONUtils.getAsString(json, "tag"))))
-                : json.has("entity") ? new EntityIcon(ForgeRegistries.ENTITIES.getValue(new ResourceLocation(JSONUtils.getAsString(json, "entity"))), JSONUtils.getAsInt(json, "scale"))
-                : new TextureIcon(json.has("texture") ? new ResourceLocation(JSONUtils.getAsString(json, "texture")) : DEFAULT_LOCATION,
-                json.has("x") ? JSONUtils.getAsInt(json, "x") : 0,
-                json.has("y") ? JSONUtils.getAsInt(json, "y") : 0);
+    public Type getType() {
+        return type;
     }
 
-    public abstract JsonElement toJson(JsonObject json);
+    public enum Type {
+        ITEM (ItemIcon::new) , TEXTURE(TextureIcon::new), ENTITY(EntityIcon::new), TAG(TagIcon::new), LIST(ListIcon::new), SPRITE(SpriteIcon::new);
 
-    public static Icon fromNetwork(PacketBuffer pb) {
+        private final Function<FriendlyByteBuf, Icon> icon;
+
+        Type(Function<FriendlyByteBuf, Icon> icon) {
+            this.icon = icon;
+        }
+
+        public Icon apply(FriendlyByteBuf buf) {
+            return icon.apply(buf);
+        }
+    }
+
+
+
+//    public static Icon fromJson(JsonObject json) {
+//        //Icon List
+//        if (json.has("icon_list")) {
+//            JsonArray array = json.getAsJsonArray("icon_list");
+//            List<Icon> icons = new ArrayList<>();
+//            for (int i = 0; i < array.size(); i++) {
+//                icons.add(fromJson(array.get(i).getAsJsonObject()));
+//            }
+//
+//            return new ListIcon(icons);
+//        }
+//
+//        //List
+//        if (json.has("list")) {
+//            JsonArray array = json.getAsJsonArray("list");
+//            List<ItemStack> items = new ArrayList<>();
+//            for (int i = 0; i < array.size(); i++) {
+//                Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(array.get(i).getAsString()));
+//                if (item != BuiltInRegistries.ITEM.get(BuiltInRegistries.ITEM.getDefaultKey()))
+//                    items.add(new ItemStack(item));
+//            }
+//
+//            return new ItemListIcon(items);
+//        }
+//
+//        //Rest
+//        return json.has("item") ? new ItemIcon(new ItemStack(GsonHelper.getAsItem(json, "item")))
+//                : json.has("tag") ? new TagIcon(ItemTags.create(new ResourceLocation(GsonHelper.getAsString(json, "tag"))))
+//                : json.has("entity") ? new EntityIcon(ForgeRegistries.ENTITIES.getValue(new ResourceLocation(JSONUtils.getAsString(json, "entity"))), JSONUtils.getAsInt(json, "scale"))
+//                : new TextureIcon(json.has("texture") ? new ResourceLocation(JSONUtils.getAsString(json, "texture")) : DEFAULT_LOCATION,
+//                json.has("x") ? JSONUtils.getAsInt(json, "x") : 0,
+//                json.has("y") ? JSONUtils.getAsInt(json, "y") : 0);
+//    }
+//
+//    public abstract JsonElement toJson(JsonObject json);
+
+    public static Icon fromNetwork(FriendlyByteBuf pb) {
         Type type = Type.values()[pb.readByte()];
         switch (type) {
             case ITEM:
-                return new ItemIcon(pb.readItem());
+                return new ItemIcon(pb);
             case TEXTURE:
-                return new TextureIcon(pb.readBoolean() ? pb.readResourceLocation() : DEFAULT_LOCATION, pb.readInt(), pb.readInt());
+                return new TextureIcon(pb.readBoolean() ? pb.readResourceLocation() : DEFAULT_LOCATION, pb.readInt(), pb.readInt(), pb.readInt());
             case ENTITY:
-                return new EntityIcon(pb.readRegistryIdSafe(EntityType.class), pb.readByte());
+                return new EntityIcon(Holder.direct(BuiltInRegistries.ENTITY_TYPE.get(pb.readResourceLocation())), pb.readInt(), pb.readByte());
             case TAG:
-                return new TagIcon(ItemTags.createOptional(pb.readResourceLocation()));
-            case ITEM_LIST: {
-                List<ItemStack> items = new ArrayList<>();
-                int size = pb.readInt();
-                for (int i = 0; i < size; i++) {
-                    items.add(pb.readItem());
-                }
-
-                return new ItemListIcon(items);
-            }
-            case ICON_LIST: {
+                return new TagIcon(ItemTags.create(pb.readResourceLocation()), pb.readInt());
+            case LIST: {
+                int count = pb.readInt();
                 List<Icon> icons = new ArrayList<>();
                 int size = pb.readInt();
                 for (int i = 0; i < size; i++) {
                     icons.add(fromNetwork(pb)); //Hmm
                 }
 
-                return new ListIcon(icons);
+                return new ListIcon(icons, count);
             }
         }
 
@@ -108,23 +122,26 @@ public abstract class Icon {
         return null;
     }
 
-    public abstract void toNetwork(PacketBuffer pb);
+    public abstract void toNetwork(FriendlyByteBuf pb);
 
     @OnlyIn(Dist.CLIENT)
-    public abstract void render(Minecraft mc, MatrixStack matrix, int x, int y);
+    public abstract void render(Minecraft mc, GuiGraphics graphics, int x, int y);
 
-    @OnlyIn(Dist.CLIENT)
-    public void renderWithCount(Minecraft mc, MatrixStack matrix, int x, int y, int count) {
-        render(mc, matrix, x, y);
+    public abstract Icon setCount(int count);
+
+
+    /**@OnlyIn(Dist.CLIENT)
+    public void renderWithCount(Minecraft mc, GuiGraphics graphics, PoseStack matrix, int x, int y, int count) {
+        render(mc, graphics, matrix, x, y);
         if (count != 1) {
-            MatrixStack matrixstack = new MatrixStack();
+            PoseStack matrixstack = new PoseStack();
             String s = String.valueOf(count);
-            matrixstack.translate(0.0D, 0.0D, mc.gui.getBlitOffset() + 200.0F);
-            IRenderTypeBuffer.Impl irendertypebuffer$impl = IRenderTypeBuffer.immediate(Tessellator.getInstance().getBuilder());
+            matrixstack.translate(0.0D, 0.0D, /*mc.gui.getBlitOffset()/?TODO/ + 200.0F);
+            IRenderTypeBuffer.Impl irendertypebuffer$impl = IRenderTypeBuffer.immediate(Tesselator.getInstance().getBuilder());
             mc.font.drawInBatch(s, (float) (x + 19 - 2 - mc.font.width(s)), (float) (y + 6 + 3), 16777215, true, matrixstack.last().pose(), irendertypebuffer$impl, false, 0, 15728880);
             irendertypebuffer$impl.endBatch();
         }
-    }
-    @OnlyIn(Dist.CLIENT)
-    public abstract List<ITextComponent> getTooltipLines(PlayerEntity player);
+    } */ //TODO
+
+    public abstract List<Component> getTooltipLines(Player player);
 }

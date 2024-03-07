@@ -1,17 +1,16 @@
 package uk.joshiejack.penguinlib.data.database;
 
 import com.google.common.collect.Maps;
-import net.minecraft.block.Block;
-import net.minecraft.entity.EntityType;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.potion.Effect;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.tags.ITag;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.apache.logging.log4j.Level;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 import uk.joshiejack.penguinlib.PenguinLib;
 import uk.joshiejack.penguinlib.util.Patterns;
 
@@ -31,7 +30,7 @@ public class Row {
                 set(labelset[i], dataset[i]);
             }
         } catch (ArrayIndexOutOfBoundsException ex) {
-            PenguinLib.LOGGER.log(Level.ERROR, "Failed to set the values for the label set: " + Arrays.toString(labelset) +
+            PenguinLib.LOGGER.error("Failed to set the values for the label set: " + Arrays.toString(labelset) +
                     " with the data " + Arrays.toString(dataset));
             throw (ex);
         }
@@ -46,6 +45,11 @@ public class Row {
 
     @SuppressWarnings("unchecked")
     public <T> T get(String label) {
+        if (!data.containsKey(label.toLowerCase(Locale.ENGLISH))) {
+            PenguinLib.LOGGER.error("Failed to find the label: " + label + " in the row: " + this + " of the table: " + table.name());
+            return null;
+        }
+
         return (T) data.get(label.toLowerCase(Locale.ENGLISH));
     }
 
@@ -76,6 +80,7 @@ public class Row {
         return get("id");
     }
 
+    @Deprecated
     public ItemStack icon() {
         //ItemStack icon = StackHelper.getStackFromString(get("icon"));
         //return icon.isEmpty() ? new ItemStack(Items.POTATO) : icon;
@@ -87,7 +92,7 @@ public class Row {
     }
 
     public EntityType<?> entity(String name) {
-        return ForgeRegistries.ENTITIES.getValue(new ResourceLocation(get(name).toString()));
+        return BuiltInRegistries.ENTITY_TYPE.get(new ResourceLocation(get(name).toString()));
     }
 
     public ResourceLocation getRL(String name) {
@@ -99,7 +104,7 @@ public class Row {
     }
 
     public Block block(String name) {
-        return ForgeRegistries.BLOCKS.getValue(new ResourceLocation(get(name).toString()));
+        return BuiltInRegistries.BLOCK.get(new ResourceLocation(get(name).toString()));
     }
 
     public Item item() {
@@ -107,7 +112,7 @@ public class Row {
     }
 
     public Item item(String name) {
-        return ForgeRegistries.ITEMS.getValue(new ResourceLocation(get(name).toString()));
+        return BuiltInRegistries.ITEM.get(new ResourceLocation(get(name).toString()));
     }
 
     public float getAsFloat(String label) {
@@ -136,28 +141,28 @@ public class Row {
         return name.isEmpty() || name.equals("none") || name.equals("default");
     }
 
-    public Effect effect() {
+    public MobEffect effect() {
         return effect("effect");
     }
 
-    public Effect effect(String name) {
-        return ForgeRegistries.POTIONS.getValue(getRL(name));
+    public MobEffect effect(String name) {
+        return BuiltInRegistries.MOB_EFFECT.get(getRL(name));
     }
 
-    public ITag.INamedTag<Item> itemTag() {
+    public TagKey<Item> itemTag() {
         return itemTag("tag");
     }
 
-    public ITag.INamedTag<Item> itemTag(String name) {
-        return ItemTags.createOptional(getRL(name));
+    public TagKey<Item> itemTag(String name) {
+        return ItemTags.create(getRL(name));
     }
 
-    public ITag.INamedTag<Block> blockTag() {
+    public TagKey<Block> blockTag() {
         return blockTag("tag");
     }
 
-    public ITag.INamedTag<Block> blockTag(String name) {
-        return BlockTags.createOptional(getRL(name));
+    public TagKey<Block> blockTag(String name) {
+        return BlockTags.create(getRL(name));
     }
 
     @Override
@@ -167,13 +172,7 @@ public class Row {
 
     //Search the objects for a match
     public boolean contains(String match) {
-        for (Object object : data.values()) {
-            if (object instanceof String) {
-                if (match.equals(object)) return true;
-            }
-        }
-
-        return false;
+        return data.values().stream().anyMatch(match::equals);
     }
 
     //Call to set the values, pulled in from the csvs

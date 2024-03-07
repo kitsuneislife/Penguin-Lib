@@ -1,12 +1,10 @@
 package uk.joshiejack.penguinlib.client.gui.book.page;
 
-import joptsimple.internal.Strings;
-import net.minecraft.client.gui.widget.button.AbstractButton;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.client.gui.components.AbstractButton;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.network.chat.Component;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import uk.joshiejack.penguinlib.client.gui.book.Book;
 import uk.joshiejack.penguinlib.client.gui.book.tab.Tab;
 import uk.joshiejack.penguinlib.client.gui.book.widget.TabButton;
@@ -15,11 +13,10 @@ import uk.joshiejack.penguinlib.util.icon.ItemIcon;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class AbstractPage {
-    public static final ITextComponent EMPTY_STRING = new StringTextComponent(Strings.EMPTY);
-    public static final AbstractPage EMPTY = new Basic(EMPTY_STRING);
-    private final ITextComponent name;
+    public static final Component EMPTY_STRING = Component.empty();
+    private final Component name;
 
-    public AbstractPage(ITextComponent name) {
+    public AbstractPage(Component name) {
         this.name = name;
     }
 
@@ -27,8 +24,8 @@ public abstract class AbstractPage {
         //Creates the tab for this page
         return new TabButton.Right(book, getIcon(), x, y, name, (btn) -> {
             tab.setPage(this);
-            book.init(book.minecraft(), book.width, book.height);
-        }, createTooltip(book, name), book.isSelected(this));
+            book.markChanged();
+        }, Tooltip.create(name), book.isSelected(this));
     }
 
     protected abstract Icon getIcon();
@@ -37,14 +34,11 @@ public abstract class AbstractPage {
 
     public abstract void initRight(Book book, int left, int top);
 
-    protected Button.ITooltip createTooltip(Book book, ITextComponent tooltip) {
-        return (btn, mtx, mX, mY) ->
-                book.renderTooltip(mtx, book.minecraft().font.split(tooltip, Math.max(book.width / 2 - 43, 170)), mX, mY);
-    }
-
     @OnlyIn(Dist.CLIENT)
     public static class Basic extends AbstractPage {
-        public Basic(ITextComponent name) {
+        public static final AbstractPage EMPTY = new Basic(EMPTY_STRING);
+
+        public Basic(Component name) {
             super(name);
         }
 
