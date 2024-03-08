@@ -34,7 +34,7 @@ public abstract class MachineBlockEntity extends InventoryBlockEntity {
         assert level != null;
         started = level.getGameTime();
         if (!level.isClientSide) {
-            PenguinNetwork.sendToNearby(new SetActiveStatePacket(worldPosition, true), this);
+            PenguinNetwork.sendToNearby(this, new SetActiveStatePacket(worldPosition, true));
         }
     }
 
@@ -75,7 +75,7 @@ public abstract class MachineBlockEntity extends InventoryBlockEntity {
                     entity.passed = 0L;
                     entity.started = 0L;
                     entity.finishMachine();
-                    PenguinNetwork.sendToNearby(new SetActiveStatePacket(pos, false), entity);
+                    PenguinNetwork.sendToNearby(entity, new SetActiveStatePacket(pos, false));
                 }
             }
         }

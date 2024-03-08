@@ -41,20 +41,20 @@ public class PenguinNetwork {
         PacketDistributor.ALL.noArg().send(packet);
     }
 
-    public static void sendToDimension(PenguinPacket packet, ServerLevel world) {
-        PacketDistributor.DIMENSION.with(world.dimension()).send(packet);
+    public static void sendToDimension(ServerLevel world, PenguinPacket... packets) {
+        PacketDistributor.DIMENSION.with(world.dimension()).send(packets);
     }
 
-    public static void sendToNearby(PenguinPacket packet, ServerLevel world, double x, double y, double z, double distance) {
-        PacketDistributor.NEAR.with(new PacketDistributor.TargetPoint(x, y, z, distance, world.dimension())).send(packet);
+    public static void sendToNearby(ServerLevel world, double x, double y, double z, double distance, PenguinPacket... packets) {
+        PacketDistributor.NEAR.with(new PacketDistributor.TargetPoint(x, y, z, distance, world.dimension())).send(packets);
     }
 
-    public static void sendToNearby(PenguinPacket packet, BlockEntity entity) {
-        sendToNearby(packet, (ServerLevel) entity.getLevel(), entity.getBlockPos().getX(), entity.getBlockPos().getY(), entity.getBlockPos().getZ(), 64D);
+    public static void sendToNearby(BlockEntity entity, PenguinPacket... packets) {
+        sendToNearby((ServerLevel) entity.getLevel(), entity.getBlockPos().getX(), entity.getBlockPos().getY(), entity.getBlockPos().getZ(), 64D, packets);
     }
 
-    public static void sendToNearby(PenguinPacket packet, Entity entity) {
-        sendToNearby(packet, (ServerLevel) entity.level(), entity.getX(), entity.getY(), entity.getZ(), 64D);
+    public static void sendToNearby(Entity entity, PenguinPacket... packets) {
+        sendToNearby((ServerLevel) entity.level(), entity.getX(), entity.getY(), entity.getZ(), 64D, packets);
     }
 
     public static <P extends PenguinPacket> void handlePacket(P packet, PlayPayloadContext context) {

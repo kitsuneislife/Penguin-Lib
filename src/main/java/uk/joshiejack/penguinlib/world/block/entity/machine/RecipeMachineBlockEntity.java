@@ -66,7 +66,7 @@ public abstract class RecipeMachineBlockEntity<I extends Recipe<Container>> exte
     public void finishMachine() {
         ItemStack result = Objects.requireNonNull(getRecipeResult(items.get(0))).assemble(this, level.registryAccess());
         items.set(0, result); //Hell yeah!
-        PenguinNetwork.sendToNearby(new SetInventorySlotPacket(worldPosition, 0, result), this);
+        PenguinNetwork.sendToNearby(this, new SetInventorySlotPacket(worldPosition, 0, result));
         setChanged();
     }
 
