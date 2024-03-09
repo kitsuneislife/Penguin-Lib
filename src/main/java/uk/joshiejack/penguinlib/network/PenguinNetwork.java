@@ -66,7 +66,7 @@ public class PenguinNetwork {
     }
 
     public static <T extends ReloadableRegistry.PenguinRegistry<T>> T readRegistry(ReloadableRegistry<T> registry, FriendlyByteBuf buf) {
-        return registry.get(buf.readResourceLocation());
+        return registry.getOrEmpty(buf.readResourceLocation());
     }
 
     public static <T extends ReloadableRegistry.PenguinRegistry<T>> void writeRegistry(T obj, FriendlyByteBuf buf) {
