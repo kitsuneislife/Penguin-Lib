@@ -97,7 +97,6 @@ public class ScriptLoader extends SimplePreparableReloadListener<Map<ResourceLoc
         for (Map.Entry<ResourceLocation, Resource> entry : filetoidconverter.listMatchingResources(pResourceManager).entrySet()) {
             ResourceLocation resourcelocation = entry.getKey();
             ResourceLocation resourcelocation1 = filetoidconverter.fileToId(resourcelocation);
-            if (resourcelocation1.getPath().split("/").length > 1) continue;
             try (Reader reader = entry.getValue().openAsReader()) {
                 String javascript = IOUtils.toString(reader);
                 javascript = requireToJavascript(pResourceManager, javascript); //Replace the require statements
