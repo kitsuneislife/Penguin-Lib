@@ -29,6 +29,12 @@ public class PenguinRegistryItem<R extends ReloadableRegistry.PenguinRegistry<R>
         return toStack(new ItemStack(this), data);
     }
 
+    public ItemStack toStack(ResourceLocation id) {
+        ItemStack stack = new ItemStack(this);
+        stack.getOrCreateTag().putString(name, id.toString());
+        return stack;
+    }
+
     public ItemStack toStack(ItemStack stack, R data) {
         stack.getOrCreateTag().putString(name, data.id().toString());
         return stack;
