@@ -1,7 +1,12 @@
 package uk.joshiejack.penguinlib.util.helper;
 
+import com.mojang.serialization.Codec;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
+import uk.joshiejack.penguinlib.PenguinLib;
 
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -46,5 +51,34 @@ public class TagHelper {
             V value = valueReader.apply(tag, key);
             map.put(key, value);
         }
+    }
+
+    private static final Component EMPTY = Component.empty();
+
+    public static <T> void putCodec(Codec<T> codec, CompoundTag tag, String key, T value) {
+        codec.encodeStart(NbtOps.INSTANCE, value)
+                .resultOrPartial(PenguinLib.LOGGER::error)
+                .ifPresent(data -> tag.put(key, data));
+    }
+
+    public static <T> T getFromCodec(Codec<T> codec, CompoundTag tag, String key, T default_) {
+        return tag.contains(key) ? codec
+                .parse(NbtOps.INSTANCE, tag.get(key))
+                .resultOrPartial(PenguinLib.LOGGER::error)
+                .orElse(default_) : default_;
+    }
+
+    public static void putComponent(CompoundTag tag, String key, Component component) {
+        ComponentSerialization.FLAT_CODEC
+                .encodeStart(NbtOps.INSTANCE, component)
+                .resultOrPartial(PenguinLib.LOGGER::error)
+                .ifPresent(data -> tag.put(key, data));
+    }
+
+    public static Component getComponent(CompoundTag tag, String key) {
+        return tag.contains(key) ? ComponentSerialization.FLAT_CODEC
+                .parse(NbtOps.INSTANCE, tag.get(key))
+                .resultOrPartial(PenguinLib.LOGGER::error)
+                .orElse(EMPTY) : EMPTY;
     }
 }
