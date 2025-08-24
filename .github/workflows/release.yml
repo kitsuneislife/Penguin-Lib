@@ -66,12 +66,19 @@ jobs:
         draft: false
         prerelease: false
         
+    - name: Get JAR filename
+      id: get_jar
+      run: |
+        JAR_FILE=$(find build/libs -name "*.jar" -not -name "*sources*" -not -name "*javadoc*" | head -1)
+        echo "jar_path=$JAR_FILE" >> $GITHUB_OUTPUT
+        echo "jar_name=$(basename $JAR_FILE)" >> $GITHUB_OUTPUT
+        
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/libs/penguinlib-1.0.0.jar
+        asset_path: ${{ steps.get_jar.outputs.jar_path }}
         asset_name: penguinlib-${{ steps.get_version.outputs.VERSION }}-forge-1.20.1.jar
         asset_content_type: application/java-archive

@@ -44,6 +44,13 @@ jobs:
           !build/libs/*-javadoc.jar
         retention-days: 30
         
+    - name: Get JAR filename (if release event)
+      if: github.event_name == 'release'
+      id: get_jar
+      run: |
+        JAR_FILE=$(find build/libs -name "*.jar" -not -name "*sources*" -not -name "*javadoc*" | head -1)
+        echo "jar_path=$JAR_FILE" >> $GITHUB_OUTPUT
+        
     - name: Upload to release (if release event)
       if: github.event_name == 'release'
       uses: actions/upload-release-asset@v1
@@ -51,6 +58,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: build/libs/penguinlib-1.0.0.jar
+        asset_path: ${{ steps.get_jar.outputs.jar_path }}
         asset_name: penguinlib-1.0.0-forge-1.20.1.jar
         asset_content_type: application/java-archive
