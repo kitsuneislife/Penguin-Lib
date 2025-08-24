@@ -1,7 +1,7 @@
 package uk.joshiejack.penguinlib.event;
 
 import net.minecraft.server.level.ServerLevel;
-import net.neoforged.neoforge.event.level.LevelEvent;
+import net.minecraftforge.event.level.LevelEvent;
 
 public class NewDayEvent extends LevelEvent {
     public NewDayEvent(ServerLevel world) {

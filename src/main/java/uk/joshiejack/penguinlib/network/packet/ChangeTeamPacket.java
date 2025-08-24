@@ -28,20 +28,19 @@ public class ChangeTeamPacket implements PenguinPacket {
         this(buf.readUUID(), buf.readUUID(), buf.readUUID());
     }
 
-    @Override
     public void write(FriendlyByteBuf to) {
         to.writeUUID(player);
         to.writeUUID(oldTeam);
         to.writeUUID(newTeam);
     }
 
-    @Override
     public @NotNull ResourceLocation id() {
         return ID;
     }
 
-    @Override
+    
     public void handle(Player clientPlayer) {
         PenguinTeamsClient.changeTeam(player, oldTeam, newTeam);
     }
 }
+

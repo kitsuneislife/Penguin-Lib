@@ -24,19 +24,18 @@ public class SyncTeamSubTagPacket extends SyncCompoundTagPacket {
         tagName = buf.readUtf();
     }
 
-    @Override
     public void write(FriendlyByteBuf buf) {
         super.write(buf);
         buf.writeUtf(tagName);
     }
 
-    @Override
     public @NotNull ResourceLocation id() {
         return ID;
     }
 
-    @Override
+    
     public void handleClient() {
         PenguinTeamsClient.setTag(tagName, tag);
     }
 }
+

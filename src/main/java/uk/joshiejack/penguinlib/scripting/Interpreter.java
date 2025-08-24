@@ -6,7 +6,7 @@ import dev.latvian.mods.rhino.EcmaError;
 import dev.latvian.mods.rhino.Function;
 import dev.latvian.mods.rhino.Scriptable;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 import org.apache.commons.lang3.tuple.Pair;
 import uk.joshiejack.penguinlib.PenguinLib;
 import uk.joshiejack.penguinlib.event.ScriptingEvents;
@@ -59,7 +59,7 @@ public class Interpreter<O> {
         if (!isInit) {
             List<String> strings = Lists.newArrayList();
             List<Pair<String, ScriptFunction>> functions = Lists.newArrayList();
-            NeoForge.EVENT_BUS.post(new ScriptingEvents.CollectGlobalVarsAndFunctions(context, globalScope, strings, functions));
+            MinecraftForge.EVENT_BUS.post(new ScriptingEvents.CollectGlobalVarsAndFunctions(context, globalScope, strings, functions));
             strings.forEach(s ->
                     context.evaluateString(globalScope, s, "scripting", 1, null));
             functions.forEach(pair ->

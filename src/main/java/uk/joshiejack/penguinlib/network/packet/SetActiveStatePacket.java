@@ -14,7 +14,6 @@ import javax.annotation.Nonnull;
 @Packet(PacketFlow.CLIENTBOUND)
 public record SetActiveStatePacket(BlockPos pos, boolean active) implements PenguinPacket {
     public static final ResourceLocation ID = new ResourceLocation("penguinlib", "set_active_state");
-    @Override
     public @Nonnull ResourceLocation id() {
         return ID;
     }
@@ -23,13 +22,12 @@ public record SetActiveStatePacket(BlockPos pos, boolean active) implements Peng
         this(from.readBlockPos(), from.readBoolean());
     }
 
-    @Override
     public void write(FriendlyByteBuf to) {
         to.writeBlockPos(pos);
         to.writeBoolean(active);
     }
 
-    @Override
+    
     public void handle(Player player) {
         BlockEntity tile = player.level().getBlockEntity(pos);
         if (tile instanceof MachineBlockEntity) {
@@ -37,3 +35,4 @@ public record SetActiveStatePacket(BlockPos pos, boolean active) implements Peng
         }
     }
 }
+

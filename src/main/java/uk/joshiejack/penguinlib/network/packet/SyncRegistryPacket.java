@@ -17,7 +17,6 @@ public class SyncRegistryPacket implements PenguinPacket {
     private final ReloadableRegistry<?> registry;
     private final Map<ResourceLocation, ? extends ReloadableRegistry.PenguinRegistry<?>> entries;
 
-    @Override
     public @NotNull ResourceLocation id() {
         return ID;
     }
@@ -34,14 +33,14 @@ public class SyncRegistryPacket implements PenguinPacket {
         this.entries = buf.readMap(FriendlyByteBuf::readResourceLocation, (r) -> registry.emptyEntry().fromNetwork(r));
     }
 
-    @Override
     public void write(FriendlyByteBuf to) {
         to.writeUtf(registry.dir());
         to.writeMap(entries, FriendlyByteBuf::writeResourceLocation, (buf, entry) -> entry.toNetwork(buf));
     }
 
-    @Override
+    
     public void handle(Player player) {
         registry.set(entries);
     }
 }
+

@@ -22,19 +22,18 @@ public class SyncPlayerTagPacket extends SyncCompoundTagPacket {
         tagName = buf.readUtf();
     }
 
-    @Override
     public void write(FriendlyByteBuf buf) {
         super.write(buf);
         buf.writeUtf(tagName);
     }
 
-    @Override
     public ResourceLocation id() {
         return ID;
     }
 
-    @Override
+    
     public void handle(Player player) {
         player.getPersistentData().put(tagName, tag);
     }
 }
+

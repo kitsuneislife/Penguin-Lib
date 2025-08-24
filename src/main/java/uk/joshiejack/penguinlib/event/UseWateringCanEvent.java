@@ -4,15 +4,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.neoforged.bus.api.Event;
-import net.neoforged.bus.api.ICancellableEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 
 import javax.annotation.Nonnull;
 
 
 @Event.HasResult
-public class UseWateringCanEvent extends PlayerEvent implements ICancellableEvent {
+@Cancelable
+public class UseWateringCanEvent extends PlayerEvent {
     private final ItemStack current;
     private final Level level;
     private final BlockPos pos;

@@ -1,17 +1,17 @@
 package uk.joshiejack.penguinlib;
 
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
 
 public class PenguinConfig {
-    public static ModConfigSpec.BooleanValue enableTeamCommands;
-    public static ModConfigSpec.BooleanValue enableDatabaseDebugger;
+    public static ForgeConfigSpec.BooleanValue enableTeamCommands;
+    public static ForgeConfigSpec.BooleanValue enableDatabaseDebugger;
 
-    PenguinConfig(ModConfigSpec.Builder builder) {
+    PenguinConfig(ForgeConfigSpec.Builder builder) {
         enableTeamCommands = builder.define("Enable Penguin Team Commands", true);
         enableDatabaseDebugger = builder.define("Enable Database Debug Output", false);
     }
 
-    public static ModConfigSpec create() {
-        return new ModConfigSpec.Builder().configure(PenguinConfig::new).getValue();
+    public static ForgeConfigSpec create() {
+        return new ForgeConfigSpec.Builder().configure(PenguinConfig::new).getValue();
     }
 }

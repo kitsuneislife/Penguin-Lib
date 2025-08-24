@@ -5,15 +5,15 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.entity.item.ItemExpireEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
-import net.neoforged.neoforge.event.entity.player.ItemFishedEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.neoforge.event.level.BlockEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.item.ItemExpireEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.player.ItemFishedEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.event.level.BlockEvent;
 import uk.joshiejack.penguinlib.PenguinLib;
 import uk.joshiejack.penguinlib.event.ScriptingEvents;
 
@@ -69,7 +69,7 @@ public class ScriptFactory {
 
     @SubscribeEvent
     public void onPlayerJoinedWorld(PlayerEvent.PlayerLoggedInEvent event) {
-        NeoForge.EVENT_BUS.post(new ScriptingEvents.TriggerFired("onPlayerLogin", event.getEntity()));
+    MinecraftForge.EVENT_BUS.post(new ScriptingEvents.TriggerFired("onPlayerLogin", event.getEntity()));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -95,33 +95,33 @@ public class ScriptFactory {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-        NeoForge.EVENT_BUS.post(new ScriptingEvents.TriggerFired("onRightClickBlock", event.getEntity(), event.getPos(), event.getItemStack(), event.getHand()));
+    MinecraftForge.EVENT_BUS.post(new ScriptingEvents.TriggerFired("onRightClickBlock", event.getEntity(), event.getPos(), event.getItemStack(), event.getHand()));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
         if (event.getTarget() instanceof LivingEntity)
-            NeoForge.EVENT_BUS.post(new ScriptingEvents.TriggerFired("onEntityInteract", event.getEntity(), event.getTarget(), event.getHand()));
+            MinecraftForge.EVENT_BUS.post(new ScriptingEvents.TriggerFired("onEntityInteract", event.getEntity(), event.getTarget(), event.getHand()));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onEntityDeath(LivingDeathEvent event) {
         Entity source = event.getSource().getEntity();
         if (source instanceof Player player) {
-            NeoForge.EVENT_BUS.post(new ScriptingEvents.TriggerFired("onEntityKilled", player, event.getEntity()));
+            MinecraftForge.EVENT_BUS.post(new ScriptingEvents.TriggerFired("onEntityKilled", player, event.getEntity()));
         }
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onItemFished(ItemFishedEvent event) {
         if (!event.getDrops().isEmpty())
-            NeoForge.EVENT_BUS.post(new ScriptingEvents.TriggerFired("onItemFished", event.getEntity(), event.getDrops().get(0), event.getHookEntity()));
+            MinecraftForge.EVENT_BUS.post(new ScriptingEvents.TriggerFired("onItemFished", event.getEntity(), event.getDrops().get(0), event.getHookEntity()));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onToolModification(BlockEvent.BlockToolModificationEvent event) {
         if (!event.isCanceled() && !event.isSimulated())
-            NeoForge.EVENT_BUS.post(new ScriptingEvents.TriggerFired("onToolModification", event.getPlayer(), event.getPos(), event.getToolAction()));
+            MinecraftForge.EVENT_BUS.post(new ScriptingEvents.TriggerFired("onToolModification", event.getPlayer(), event.getPos(), event.getToolAction()));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -160,8 +160,8 @@ public class ScriptFactory {
 //    }
 
     public static void resetRegistry() {
-        REGISTRY.clear();
-        METHOD_TO_SCRIPTS.clear();
+    REGISTRY.clear();
+    METHOD_TO_SCRIPTS.clear();
     }
     public static void register(ResourceLocation registryName, Interpreter<?> interpreter) {
         if (REGISTRY.containsKey(registryName))
@@ -173,7 +173,7 @@ public class ScriptFactory {
 
         if (INSTANCE == null) {
             INSTANCE = new ScriptFactory();
-            NeoForge.EVENT_BUS.register(INSTANCE);
+            MinecraftForge.EVENT_BUS.register(INSTANCE);
         }
 
         PenguinLib.LOGGER.info("Registered a Penguin-Script @ " + registryName);
@@ -182,7 +182,7 @@ public class ScriptFactory {
 
     public static List<String> getMethods() {
         if (METHODS.isEmpty()) {
-            NeoForge.EVENT_BUS.post(new ScriptingEvents.CollectMethod(METHODS));
+            MinecraftForge.EVENT_BUS.post(new ScriptingEvents.CollectMethod(METHODS));
         }
 
         return METHODS;

@@ -13,10 +13,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemHandlerHelper;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
@@ -77,12 +78,10 @@ public abstract class PenguinBlock extends Block {
         if (tileentity == null || player.isShiftKeyDown())
             return InteractionResult.FAIL;
         else {
-            IItemHandler handler = world.getCapability(Capabilities.ItemHandler.BLOCK, pos, blockRayTraceResult.getDirection());
-            if (handler != null) {
+            LazyOptional<IItemHandler> capability = tileentity.getCapability(ForgeCapabilities.ITEM_HANDLER, blockRayTraceResult.getDirection());
+            return capability.map(handler -> {
                 return !player.getItemInHand(hand).isEmpty() && insert(player, hand, handler) == InteractionResult.SUCCESS ? InteractionResult.SUCCESS : extract(player, handler);
-            }
-
-            return InteractionResult.PASS;
+            }).orElse(InteractionResult.PASS);
         }
     }
 
@@ -104,11 +103,11 @@ public abstract class PenguinBlock extends Block {
             if (!oldState.is(newState.getBlock())) {
                 BlockEntity tileentity = world.getBlockEntity(pos);
                 if (tileentity != null) {
-                    IItemHandler optional = world.getCapability(Capabilities.ItemHandler.BLOCK, pos, null);
-                    if (optional != null) {
-                        onRemoved(optional, world, pos);
+                    LazyOptional<IItemHandler> capability = tileentity.getCapability(ForgeCapabilities.ITEM_HANDLER, null);
+                    capability.ifPresent(handler -> {
+                        onRemoved(handler, world, pos);
                         world.updateNeighbourForOutputSignal(pos, this);
-                    }
+                    });
                 }
 
                 super.onRemove(oldState, world, pos, newState, bool);

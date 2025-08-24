@@ -5,7 +5,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.network.chat.Component;
 import uk.joshiejack.penguinlib.PenguinLib;
 
 import java.util.Map;
@@ -69,16 +69,13 @@ public class TagHelper {
     }
 
     public static void putComponent(CompoundTag tag, String key, Component component) {
-        ComponentSerialization.FLAT_CODEC
-                .encodeStart(NbtOps.INSTANCE, component)
-                .resultOrPartial(PenguinLib.LOGGER::error)
-                .ifPresent(data -> tag.put(key, data));
+        // ComponentSerialization.FLAT_CODEC não existe no Forge 1.20.1
+        // Usando serialização simples
+        tag.putString(key, Component.Serializer.toJson(component));
     }
 
     public static Component getComponent(CompoundTag tag, String key) {
-        return tag.contains(key) ? ComponentSerialization.FLAT_CODEC
-                .parse(NbtOps.INSTANCE, tag.get(key))
-                .resultOrPartial(PenguinLib.LOGGER::error)
-                .orElse(EMPTY) : EMPTY;
+        return tag.contains(key) ? Component.Serializer.fromJson(tag.getString(key))
+                : EMPTY;
     }
 }

@@ -9,8 +9,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import uk.joshiejack.penguinlib.client.gui.GuiUtils;
 
 import java.util.ArrayList;
@@ -67,7 +67,7 @@ public class SpriteIcon extends Icon {
     public void render(Minecraft mc, GuiGraphics graphics, int x, int y) {
 //        mc.gui.setBlitOffset(0); //TODO check this
         ResourceLocation sprite = shadowed ? shadowedSprite : this.sprite;
-        graphics.blitSprite(sprite, x, y, 16, 16);
+                    graphics.blit(sprite, x, y, 0, 0, 16, 16);  // Corrected signature for Forge 1.20.1
         GuiUtils.renderIconDecorations(graphics, mc.font, x, y, count);
         shadowed = false;
     }

@@ -1,7 +1,7 @@
 package uk.joshiejack.penguinlib.scripting.wrapper.event;
 
-import net.neoforged.bus.api.Event;
-import net.neoforged.bus.api.ICancellableEvent;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.eventbus.api.Cancelable;
 import uk.joshiejack.penguinlib.scripting.wrapper.AbstractJS;
 
 public abstract class AbstractEventJS<C extends Event> extends AbstractJS<C> {
@@ -28,7 +28,10 @@ public abstract class AbstractEventJS<C extends Event> extends AbstractJS<C> {
 
     public void cancel() {
         C event = penguinScriptingObject;
-        if (event instanceof ICancellableEvent cancellableEvent)
-            cancellableEvent.setCanceled(true);
+        // For Forge 1.20.1, ICancellableEvent was removed
+        // Cancel functionality needs to be handled differently
+        if (event.isCancelable()) {
+            event.setCanceled(true);
+        }
     }
 }

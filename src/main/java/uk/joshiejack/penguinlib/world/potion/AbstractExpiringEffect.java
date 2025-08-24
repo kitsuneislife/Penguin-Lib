@@ -17,9 +17,9 @@ public abstract class AbstractExpiringEffect extends PenguinEffect {
     }
 
     @Override
-    public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
+    public boolean isDurationEffectTick(int duration, int amplifier) {
         expiring = duration == 1;
-        return expiring || super.shouldApplyEffectTickThisTick(duration, amplifier);
+        return expiring || super.isDurationEffectTick(duration, amplifier);
     }
 
     @Override

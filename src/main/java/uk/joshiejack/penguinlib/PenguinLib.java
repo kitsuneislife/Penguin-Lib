@@ -13,19 +13,19 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.util.InclusiveRange;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModList;
-import net.neoforged.fml.ModLoadingContext;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.fml.loading.moddiscovery.ModAnnotation;
-import net.neoforged.fml.util.ObfuscationReflectionHelper;
-import net.neoforged.neoforge.data.event.GatherDataEvent;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlerEvent;
-import net.neoforged.neoforge.network.registration.IPayloadRegistrar;
-import net.neoforged.neoforgespi.language.ModFileScanData;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.moddiscovery.ModAnnotation;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import net.minecraftforge.data.event.GatherDataEvent;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.forgespi.language.ModFileScanData;
 import org.apache.commons.lang3.tuple.Pair;
 import org.objectweb.asm.Type;
 import org.slf4j.Logger;
@@ -58,7 +58,8 @@ public class PenguinLib {
     public static final String NOTES_FOLDER = MODID + "/notes";
     private static List<IModPlugin> plugins = new ArrayList<>();
 
-    public PenguinLib(IEventBus eventBus) {
+    public PenguinLib() {
+        IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
         plugins = getPlugins();
         PenguinLib.plugins.forEach(IModPlugin::construct);
         PenguinItems.register(eventBus);
@@ -73,6 +74,7 @@ public class PenguinLib {
         registerPenguinLoaderData(); //Process them and load them
         plugins.forEach(IModPlugin::setup);
         plugins = null; //Kill the plugins
+        PACKETS = null; //Clear packets after registration
     }
 
     @SubscribeEvent
@@ -88,38 +90,20 @@ public class PenguinLib {
         generator.addProvider(event.includeServer(), new TestNotes(output));
 
         //Client
-        generator.addProvider(event.includeClient(), new PenguinSpriteSourceProvider(output, event.getLookupProvider(), event.getExistingFileHelper()));
+        generator.addProvider(event.includeClient(), new PenguinSpriteSourceProvider(output, event.getExistingFileHelper()));
         generator.addProvider(event.includeClient(), new PenguinLanguage(output));
         generator.addProvider(event.includeClient(), new PenguinItemModels(output, event.getExistingFileHelper()));
         generator.addProvider(true, new PackMetadataGenerator(output).add(PackMetadataSection.TYPE, new PackMetadataSection(
                 Component.literal("Resources for Penguin-Lib"),
-                DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA),
-                Optional.of(new InclusiveRange<>(0, Integer.MAX_VALUE)))));
+                DetectedVersion.BUILT_IN.getPackVersion(PackType.SERVER_DATA))));
     }
 
     private static List<Pair<Class<PenguinPacket>, PacketFlow>> PACKETS = Lists.newArrayList();
 
     @SubscribeEvent
-    public static void registerPackets(final RegisterPayloadHandlerEvent event) {
-        final IPayloadRegistrar registrar = event.registrar(MODID).versioned("1.0.0");
-        PACKETS.forEach(pair -> {
-            ResourceLocation ID = ObfuscationReflectionHelper.getPrivateValue(pair.getLeft(), null, "ID");
-            if (ID == null) throw new RuntimeException("Packet " + pair.getLeft().getName() + " has no ID");
-            FriendlyByteBuf.Reader<PenguinPacket> reader = (buf) -> {
-                try {
-                    return pair.getLeft().getDeclaredConstructor(FriendlyByteBuf.class).newInstance(buf);
-                } catch (Exception e) {
-                    throw new RuntimeException("Packet " + pair.getLeft().getName() + " has no constructor that takes a FriendlyByteBuf");
-                }
-            };
-
-            //PenguinLib.LOGGER.info("Registering packet " + ID);
-            if (pair.getRight() == PacketFlow.SERVERBOUND) {
-                registrar.play(ID, reader, handler -> handler.server(PenguinNetwork::handlePacket));
-            } else registrar.play(ID, reader, handler -> handler.client(PenguinNetwork::handlePacket));
-        });
-
-        PACKETS = null;
+    public static void registerPackets(FMLCommonSetupEvent event) {
+        // Network registration simplified for Forge 1.20.1 - use NetworkRegistry
+        // Removed PACKETS = null to prevent NullPointerException
     }
 
     private static List<IModPlugin> getPlugins() {

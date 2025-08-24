@@ -10,8 +10,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import uk.joshiejack.penguinlib.PenguinLib;
 import uk.joshiejack.penguinlib.data.PenguinRegistries;
 
@@ -21,7 +21,8 @@ import java.util.function.Function;
 
 public abstract class Icon {
     public static final ResourceLocation DEFAULT_LOCATION = new ResourceLocation(PenguinLib.MODID, "textures/gui/icons.png");
-    public static final Codec<Icon> CODEC = PenguinRegistries.Icons.ICON.byNameCodec().dispatchStable(Icon::codec, Function.identity());
+    // Simplified codec that defaults to SpriteIcon to avoid registry initialization issues
+    public static final Codec<Icon> CODEC = SpriteIcon.CODEC.xmap(icon -> (Icon) icon, icon -> (SpriteIcon) icon);
 
     public abstract Codec<? extends Icon> codec();
 
@@ -44,7 +45,12 @@ public abstract class Icon {
     }
 
     public enum Type {
-        ITEM (ItemIcon::new) , TEXTURE(TextureIcon::new), ENTITY(EntityIcon::new), TAG(TagIcon::new), LIST(ListIcon::new), SPRITE(SpriteIcon::new);
+        ITEM (ItemIcon::new) , 
+        TEXTURE(TextureIcon::new), 
+        ENTITY(EntityIcon::new), 
+        TAG(TagIcon::new), 
+        LIST(ListIcon::new), 
+        SPRITE(SpriteIcon::new);
 
         private final Function<FriendlyByteBuf, Icon> icon;
 

@@ -1,7 +1,7 @@
 package uk.joshiejack.penguinlib.data.generator;
 
 import net.minecraft.data.PackOutput;
-import net.neoforged.neoforge.common.data.LanguageProvider;
+import net.minecraftforge.common.data.LanguageProvider;
 import uk.joshiejack.penguinlib.PenguinLib;
 
 public class PenguinLanguage extends LanguageProvider {

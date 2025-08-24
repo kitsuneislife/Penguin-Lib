@@ -12,10 +12,13 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.ICapabilityProvider;
-import net.neoforged.neoforge.common.util.Lazy;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.util.Lazy;
+import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import uk.joshiejack.penguinlib.world.block.entity.PenguinBlockEntity;
@@ -33,18 +36,15 @@ public abstract class InventoryBlockEntity extends PenguinBlockEntity implements
     }
 
     @NotNull
-    public static <T extends InventoryBlockEntity> ICapabilityProvider<T, @Nullable Direction, IItemHandler> getItemProvider() {
-        return (tile, side) -> {
-            if (tile.getBlockState().hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)
-                    && tile.getBlockState().getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.UPPER) {
-                BlockPos below = tile.getBlockPos().below();
-                IItemHandler maybeHandler = tile.level.getCapability(Capabilities.ItemHandler.BLOCK, below, side);
-                if (maybeHandler != null) {
-                    return maybeHandler;
+    public static <T extends InventoryBlockEntity> ICapabilityProvider getItemProvider(T entity) {
+        return new ICapabilityProvider() {
+            @Override
+            public <C> LazyOptional<C> getCapability(Capability<C> cap, Direction side) {
+                if (cap == ForgeCapabilities.ITEM_HANDLER) {
+                    return LazyOptional.of(() -> (C) entity.getItemHandler());
                 }
+                return LazyOptional.empty();
             }
-
-            return tile.getItemHandler();
         };
     }
 

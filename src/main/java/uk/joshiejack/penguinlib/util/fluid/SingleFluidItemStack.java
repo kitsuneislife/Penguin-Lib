@@ -2,8 +2,8 @@ package uk.joshiejack.penguinlib.util.fluid;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.templates.FluidHandlerItemStack;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
 
 public class SingleFluidItemStack extends FluidHandlerItemStack {
     private final Fluid fluid;

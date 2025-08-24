@@ -18,7 +18,6 @@ public class SyncTeamMembersPacket implements PenguinPacket {
     public static final ResourceLocation ID = PenguinLib.prefix("sync_team_members");
     public final Map<UUID, UUID> memberOf;
 
-    @Override
     public @NotNull ResourceLocation id() {
         return ID;
     }
@@ -34,7 +33,6 @@ public class SyncTeamMembersPacket implements PenguinPacket {
                 memberOf.put(from.readUUID(), from.readUUID()));
     }
 
-    @Override
     public void write(FriendlyByteBuf to) {
         to.writeByte(memberOf.size());
         memberOf.forEach((key, value) -> {
@@ -43,8 +41,9 @@ public class SyncTeamMembersPacket implements PenguinPacket {
         });
     }
 
-    @Override
+    
     public void handleClient() {
         PenguinTeamsClient.setMembers(memberOf);
     }
 }
+

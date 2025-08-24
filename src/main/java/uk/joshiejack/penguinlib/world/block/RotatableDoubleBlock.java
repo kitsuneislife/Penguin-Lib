@@ -64,10 +64,10 @@ public abstract class RotatableDoubleBlock extends RotatableBlock {
     }
 
     @Override
-    public @NotNull BlockState playerWillDestroy(@Nonnull Level world, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nonnull Player player) {
+    public void playerWillDestroy(@Nonnull Level world, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nonnull Player player) {
         if (!world.isClientSide && player.isCreative())
             RotatableDoubleBlock.preventCreativeDropFromBottomPart(world, pos, state, player);
-        return super.playerWillDestroy(world, pos, state, player);
+        super.playerWillDestroy(world, pos, state, player);
     }
 
     @Override

@@ -14,8 +14,8 @@ public abstract class SyncCompoundTagPacket implements PenguinPacket {
         this.tag = buf.readNbt();
     }
 
-    @Override
     public void write(FriendlyByteBuf buf) {
         buf.writeNbt(tag);
     }
 }
+

@@ -2,9 +2,9 @@ package uk.joshiejack.penguinlib.data;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import uk.joshiejack.penguinlib.PenguinLib;
 import uk.joshiejack.penguinlib.event.DatabaseLoadedEvent;
 

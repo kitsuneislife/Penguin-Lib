@@ -21,15 +21,15 @@ public abstract class PenguinRegistryListPacket<O extends ReloadableRegistry.Pen
         this.registryNames = buffer.readList(FriendlyByteBuf::readResourceLocation);
     }
 
-    @Override
     public void write(FriendlyByteBuf pBuffer) {
         pBuffer.writeCollection(registryNames, FriendlyByteBuf::writeResourceLocation);
     }
 
-    @Override
+    
     public void handle(Player player) {
         handle(player, registryNames.stream().map(registry::get).toList());
     }
 
     protected abstract void handle(Player player, List<O> entries);
 }
+

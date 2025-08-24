@@ -11,7 +11,6 @@ import uk.joshiejack.penguinlib.util.registry.Packet;
 @Packet(value = PacketFlow.CLIENTBOUND)
 public class TemplatePacket implements PenguinPacket {
     public static final ResourceLocation ID = PenguinLib.prefix("template_packet");
-    @Override
     public @NotNull ResourceLocation id() {
         return ID;
     }
@@ -24,14 +23,14 @@ public class TemplatePacket implements PenguinPacket {
 
     }
 
-    @Override
     public void write(FriendlyByteBuf to) {
 
     }
 
 
-    @Override
+    
     public void handle(Player player) {
 
     }
 }
+

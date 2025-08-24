@@ -1,7 +1,7 @@
 package uk.joshiejack.penguinlib.event;
 
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.event.level.LevelEvent;
+import net.minecraftforge.event.level.LevelEvent;
 
 import java.util.UUID;
 

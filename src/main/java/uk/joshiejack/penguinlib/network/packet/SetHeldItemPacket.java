@@ -13,7 +13,6 @@ import uk.joshiejack.penguinlib.util.registry.Packet;
 @Packet(PacketFlow.CLIENTBOUND)
 public record SetHeldItemPacket(InteractionHand hand, ItemStack stack) implements PenguinPacket {
     public static final ResourceLocation ID = PenguinLib.prefix("set_held_item");
-    @Override
     public @NotNull ResourceLocation id() {
         return ID;
     }
@@ -27,14 +26,14 @@ public record SetHeldItemPacket(InteractionHand hand, ItemStack stack) implement
         this(from.readEnum(InteractionHand.class), from.readItem());
     }
 
-    @Override
     public void write(FriendlyByteBuf to) {
         to.writeEnum(hand);
         to.writeItem(stack);
     }
 
-    @Override
+    
     public void handle(Player player) {
         player.setItemInHand(hand, stack);
     }
 }
+

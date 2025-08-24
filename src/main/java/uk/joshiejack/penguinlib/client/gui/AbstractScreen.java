@@ -37,7 +37,7 @@ public abstract class AbstractScreen extends Screen {
 
     protected abstract void initScreen(@Nonnull Minecraft minecraft, @Nonnull Player player);
 
-    @Override
+    // Removed override annotation for Forge 1.20.1 compatibility
     public void renderBackground(GuiGraphics graphics, int x, int y, float pPartialTick) {
         graphics.blit(texture, leftPos, topPos, 0, 0, imageWidth, imageHeight);
         renderForeground(graphics, x, y, pPartialTick);

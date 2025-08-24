@@ -18,7 +18,7 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.common.MinecraftForge;
 import org.jetbrains.annotations.NotNull;
 import uk.joshiejack.penguinlib.event.PenguinEventHooks;
 import uk.joshiejack.penguinlib.event.UseWateringCanEvent;
@@ -117,7 +117,7 @@ public abstract class AbstractWateringCanItem extends Item {
                             level.addAlwaysVisibleParticle(ParticleTypes.SPLASH, x, pos.getY() + 1D, z, 0, 0, 0);
                         }
 
-                        NeoForge.EVENT_BUS.post(new UseWateringCanEvent.Post(player, itemstack, level, pos));
+                        MinecraftForge.EVENT_BUS.post(new UseWateringCanEvent.Post(player, itemstack, level, pos));
                         used = true;
                     }
                 }

@@ -1,6 +1,7 @@
 package uk.joshiejack.penguinlib.data.generator;
 
 import com.google.common.collect.Maps;
+import com.mojang.serialization.JsonOps;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
@@ -35,7 +36,7 @@ public abstract class AbstractPenguinRegistryProvider<T extends ReloadableRegist
     public @NotNull CompletableFuture<?> run(final @NotNull CachedOutput output) {
         final List<CompletableFuture<?>> list = new ArrayList<>();
         buildRegistry(entries);
-        entries.forEach((key, category) -> list.add(DataProvider.saveStable(output, registry.codec(), category, pathProvider.json(key))));
+        entries.forEach((key, category) -> list.add(DataProvider.saveStable(output, registry.codec().encodeStart(JsonOps.INSTANCE, category).getOrThrow(false, s -> {}), pathProvider.json(key))));
         return CompletableFuture.allOf(list.toArray(CompletableFuture[]::new));
     }
 

@@ -14,7 +14,6 @@ import uk.joshiejack.penguinlib.util.registry.Packet;
 public class SyncTeamDataPacket extends SyncCompoundTagPacket {
     public static final ResourceLocation ID = PenguinLib.prefix("sync_team_data");
 
-    @Override
     public @NotNull ResourceLocation id() {
         return ID;
     }
@@ -27,8 +26,9 @@ public class SyncTeamDataPacket extends SyncCompoundTagPacket {
         super(buf);
     }
 
-    @Override
+    
     public void handle(Player player) {
         PenguinTeamsClient.setInstance(tag);
     }
 }
+

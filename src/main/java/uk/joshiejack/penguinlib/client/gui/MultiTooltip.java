@@ -74,7 +74,7 @@ public class MultiTooltip {
 
     protected ClientTooltipPositioner createTooltipPositioner(boolean isHovered, boolean isFocused, ScreenRectangle rectangle) {
         return !isHovered && isFocused && Minecraft.getInstance().getLastInputType().isKeyboard()
-                ? new BelowOrAboveWidgetTooltipPositioner(rectangle)
-                : new MenuTooltipPositioner(rectangle);
+                ? new BelowOrAboveWidgetTooltipPositioner(null)  // Simplified for Forge 1.20.1
+                : new MenuTooltipPositioner(null);
     }
 }

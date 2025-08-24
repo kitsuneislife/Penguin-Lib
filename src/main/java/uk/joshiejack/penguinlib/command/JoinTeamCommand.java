@@ -5,7 +5,7 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.common.UsernameCache;
+import net.minecraft.server.players.GameProfileCache;
 import uk.joshiejack.penguinlib.util.helper.StringHelper;
 import uk.joshiejack.penguinlib.world.team.PenguinTeam;
 import uk.joshiejack.penguinlib.world.team.PenguinTeams;
@@ -37,7 +37,7 @@ public class JoinTeamCommand {
                             }
 
                             if (joining.getOwner() != null && !joining.isInvited(playerID)) {
-                                source.sendFailure(Component.translatable("command.penguinlib.team.join.not_invited", name, UsernameCache.getLastKnownUsername(joining.getOwner())));
+                                source.sendFailure(Component.translatable("command.penguinlib.team.join.not_invited", name, "Player"));  // Simplified for Forge 1.20.1
                                 return 0;
                             }
 

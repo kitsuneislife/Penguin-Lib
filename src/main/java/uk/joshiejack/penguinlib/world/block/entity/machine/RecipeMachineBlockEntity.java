@@ -5,7 +5,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -36,9 +36,9 @@ public abstract class RecipeMachineBlockEntity<I extends Recipe<Container>> exte
     @SuppressWarnings("ConstantConditions")
     @Nullable
     protected I getRecipeResult(ItemStack stack) {
-        for (RecipeHolder<I> recipe : level.getRecipeManager().getAllRecipesFor(recipeType)) {
-            if (recipe.value().getIngredients().stream().allMatch(ing -> ing.test(stack)))
-                return recipe.value();
+        for (I recipe : level.getRecipeManager().getAllRecipesFor(recipeType)) {
+            if (recipe.getIngredients().stream().allMatch(ing -> ing.test(stack)))
+                return recipe;
         }
 
         return null;

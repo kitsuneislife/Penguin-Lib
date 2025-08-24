@@ -9,11 +9,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.common.UsernameCache;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraft.server.players.GameProfileCache;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import org.jetbrains.annotations.NotNull;
 import uk.joshiejack.penguinlib.PenguinLib;
 import uk.joshiejack.penguinlib.client.PenguinTeamsClient;
@@ -38,7 +38,7 @@ public class PenguinTeams extends SavedData {
     private final Map<String, PenguinTeam> teamsByName = new HashMap<>(); //TeamName > Team (not saved)
 
     public static PenguinTeams get(ServerLevel world) {
-        return world.getServer().overworld().getDataStorage().computeIfAbsent(new SavedData.Factory<>(PenguinTeams::new, PenguinTeams::load), DATA_NAME);
+        return world.getServer().overworld().getDataStorage().computeIfAbsent(PenguinTeams::load, PenguinTeams::new, DATA_NAME);
     }
 
     public boolean nameExists(String name) {
@@ -92,11 +92,11 @@ public class PenguinTeams extends SavedData {
         newTeam.members().add(player);
         teamsByName.remove(newTeam.getName(), newTeam); //Remove the old name
         if (player.equals(newUUID))
-            newTeam.setName(UsernameCache.getLastKnownUsername(player));
+            newTeam.setName(world.getServer().getProfileCache().get(player).map(profile -> profile.getName()).orElse("Unknown"));
         function.accept(newTeam);
         teamsByName.put(newTeam.getName(), newTeam); //Add the new name
         newTeam.onChanged(world);
-        NeoForge.EVENT_BUS.post(new TeamChangedEvent(world, player, oldUUID, newUUID));
+        MinecraftForge.EVENT_BUS.post(new TeamChangedEvent(world, player, oldUUID, newUUID));
         PenguinNetwork.sendToEveryone(new ChangeTeamPacket(player, oldUUID, newUUID));
         setDirty();
     }

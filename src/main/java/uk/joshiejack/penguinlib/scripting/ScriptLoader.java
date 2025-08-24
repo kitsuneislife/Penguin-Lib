@@ -7,9 +7,9 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.AddReloadListenerEvent;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import uk.joshiejack.penguinlib.PenguinLib;
@@ -39,10 +39,10 @@ public class ScriptLoader extends SimplePreparableReloadListener<Map<ResourceLoc
 
     @Override
     public void setup() {
-        NeoForge.EVENT_BUS.register(this);
-        NeoForge.EVENT_BUS.register(WrapperRegistry.class);
-        NeoForge.EVENT_BUS.register(DefaultScripting.class);
-        NeoForge.EVENT_BUS.register(ScriptFactory.Collect.class);
+    MinecraftForge.EVENT_BUS.register(this);
+    MinecraftForge.EVENT_BUS.register(WrapperRegistry.class);
+    MinecraftForge.EVENT_BUS.register(DefaultScripting.class);
+    MinecraftForge.EVENT_BUS.register(ScriptFactory.Collect.class);
     }
 
     public record ScriptLocation(String dir, Function<ResourceLocation, Interpreter<?>> getJS) {}

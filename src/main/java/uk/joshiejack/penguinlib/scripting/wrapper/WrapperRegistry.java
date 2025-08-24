@@ -6,11 +6,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import dev.latvian.mods.rhino.Context;
 import dev.latvian.mods.rhino.Scriptable;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.neoforge.common.NeoForge;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.common.MinecraftForge;
 import org.apache.commons.lang3.tuple.Pair;
 import uk.joshiejack.penguinlib.event.ScriptingEvents;
 import uk.joshiejack.penguinlib.scripting.Interpreter;
@@ -29,7 +29,7 @@ public class WrapperRegistry {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onCollectForRegistration(ScriptingEvents.CollectGlobalVarsAndFunctions event) {
-        NeoForge.EVENT_BUS.post(new ScriptingEvents.CollectWrapper(EXTENSIBLES, STATICS));
+    MinecraftForge.EVENT_BUS.post(new ScriptingEvents.CollectWrapper(EXTENSIBLES, STATICS));
         EXTENSIBLES.sort(Comparator.comparing(p -> p.getValue().getPriority()));
     }
 

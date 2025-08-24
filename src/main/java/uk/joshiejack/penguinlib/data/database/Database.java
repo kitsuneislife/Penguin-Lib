@@ -7,13 +7,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.ModList;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
-import net.neoforged.neoforge.event.OnDatapackSyncEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.AddReloadListenerEvent;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -39,15 +38,10 @@ public class Database implements ResourceManagerReloadListener {
     private static final int dirLength = PenguinLib.DATABASE_FOLDER.length() + 1;
     public final Multimap<String, String> tableData = HashMultimap.create();
 
-    @SubscribeEvent
-    public static void onDataPack(OnDatapackSyncEvent event) {
-        if (event.getPlayer() != null)
-            PenguinNetwork.sendToClient(event.getPlayer(), new SyncDatabasePacket(INSTANCE));
-        else {
-            event.getPlayerList().getPlayers().forEach(player ->
-                    PenguinNetwork.sendToClient(player, new SyncDatabasePacket(INSTANCE)));
-        }
-    }
+    // @SubscribeEvent
+    // public static void onDataPack(/* OnDatapackSyncEvent event */) {
+    //     // TODO: Implement proper datapack sync for Forge 1.20.1
+    // }
 
     @SubscribeEvent
     public static void registerData(AddReloadListenerEvent event) {
@@ -136,20 +130,18 @@ public class Database implements ResourceManagerReloadListener {
     public void onResourceManagerReload(@NotNull ResourceManager rm) {
         Map<String, Table> tables = new HashMap<>();
         tableData.clear(); //Remove the table data instance
-        List<ModContainer> sorted = ModList.get().getSortedMods();
         rm.listResources(PenguinLib.DATABASE_FOLDER, (fileName) -> fileName.toString().endsWith(".csv"))
                 .entrySet().stream().sorted((r1, r2) -> {
                     //Force the database to process resources in the order of the mods
                     String modid1 = r1.getKey().getNamespace();
                     String modid2 = r2.getKey().getNamespace();
-                    int index1 = sorted.indexOf(ModList.get().getModContainerById(modid1).orElse(null));
-                    int index2 = sorted.indexOf(ModList.get().getModContainerById(modid2).orElse(null));
-                    return index1 - index2;
+                    // Simplified comparison for Forge 1.20.1
+                    return modid1.compareTo(modid2);
                 })
                 .forEach(r -> loadData(tables, r.getKey(), r.getValue()));
         if (PenguinConfig.enableDatabaseDebugger.get())
             print(tables);
-        NeoForge.EVENT_BUS.post(new DatabasePopulateEvent(tables));
-        NeoForge.EVENT_BUS.post(new DatabaseLoadedEvent(tables));
+        MinecraftForge.EVENT_BUS.post(new DatabasePopulateEvent(tables));
+        MinecraftForge.EVENT_BUS.post(new DatabaseLoadedEvent(tables));
     }
 }

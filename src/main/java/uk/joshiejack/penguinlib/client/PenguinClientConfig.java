@@ -1,15 +1,14 @@
 package uk.joshiejack.penguinlib.client;
 
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
 
 public class PenguinClientConfig {
-    public static ModConfigSpec.EnumValue<ClockType> clockType;
-    public static ModConfigSpec.BooleanValue displayClockInHUDs;
-    public static ModConfigSpec.BooleanValue requireClockItemForTime;
-    public static ModConfigSpec.BooleanValue fancyGUI;
+    public static ForgeConfigSpec.EnumValue<ClockType> clockType;
+    public static ForgeConfigSpec.BooleanValue displayClockInHUDs;
+    public static ForgeConfigSpec.BooleanValue requireClockItemForTime;
+    public static ForgeConfigSpec.BooleanValue fancyGUI;
 
-
-    PenguinClientConfig(ModConfigSpec.Builder builder) {
+    PenguinClientConfig(ForgeConfigSpec.Builder builder) {
         builder.push("Clock");
         clockType = builder.defineEnum("Clock Type", ClockType.TWENTY_FOUR_HOUR);
         displayClockInHUDs = builder.define("Display time in Penguin HUDs", true);
@@ -18,8 +17,8 @@ public class PenguinClientConfig {
         fancyGUI = builder.define("Fancy GUI", true);
     }
 
-    public static ModConfigSpec create() {
-        return new ModConfigSpec.Builder().configure(PenguinClientConfig::new).getValue();
+    public static ForgeConfigSpec create() {
+        return new ForgeConfigSpec.Builder().configure(PenguinClientConfig::new).getValue();
     }
 
     public enum ClockType {

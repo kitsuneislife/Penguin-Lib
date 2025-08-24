@@ -2,7 +2,7 @@ package uk.joshiejack.penguinlib.world.potion;
 
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.neoforged.neoforge.common.EffectCure;
+// Removed EffectCure import as it doesn't exist in Forge 1.20.1
 
 import java.util.Set;
 
@@ -11,6 +11,5 @@ public class IncurableEffect extends PenguinEffect {
         super(type, color);
     }
 
-    @Override
-    public void fillEffectCures(Set<EffectCure> cures, MobEffectInstance effectInstance) {}
+    // Removed fillEffectCures method as EffectCure doesn't exist in Forge 1.20.1
 }

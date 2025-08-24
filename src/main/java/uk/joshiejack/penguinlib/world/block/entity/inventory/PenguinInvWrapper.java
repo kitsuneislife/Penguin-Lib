@@ -1,6 +1,6 @@
 package uk.joshiejack.penguinlib.world.block.entity.inventory;
 
-import net.neoforged.neoforge.items.wrapper.InvWrapper;
+import net.minecraftforge.items.wrapper.InvWrapper;
 
 public class PenguinInvWrapper extends InvWrapper {
     private final InventoryBlockEntity tileEntity;

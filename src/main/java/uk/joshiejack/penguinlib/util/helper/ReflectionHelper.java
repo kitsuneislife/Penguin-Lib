@@ -1,6 +1,6 @@
 package uk.joshiejack.penguinlib.util.helper;
 
-import net.neoforged.fml.util.ObfuscationReflectionHelper;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Constructor;

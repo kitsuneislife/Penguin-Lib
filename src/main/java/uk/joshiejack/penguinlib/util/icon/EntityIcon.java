@@ -13,9 +13,10 @@ import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import org.joml.Quaternionf;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import uk.joshiejack.penguinlib.client.gui.GuiUtils;
@@ -74,7 +75,7 @@ public class EntityIcon extends Icon {
                 return;
         }
 
-        InventoryScreen.renderEntityInInventory(graphics, x + 8, y + 15, scale, TRANSLATION, ANGLE, null, this.entity);
+        InventoryScreen.renderEntityInInventory(graphics, x + 8, y + 15, scale, new Quaternionf(), ANGLE, this.entity);
         GuiUtils.renderIconDecorations(graphics, mc.font, x + 8, y + 15, count);
     }
 

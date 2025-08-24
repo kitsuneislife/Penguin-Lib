@@ -1,6 +1,7 @@
 package uk.joshiejack.penguinlib.data.generator;
 
 import com.google.common.collect.Maps;
+import com.mojang.serialization.JsonOps;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.PackOutput;
@@ -35,12 +36,12 @@ public abstract class AbstractNoteProvider implements DataProvider {
     public @NotNull CompletableFuture<?> run(final @NotNull CachedOutput output) {
         final List<CompletableFuture<?>> list = new ArrayList<>();
         buildNotes(categories, notes);
-        categories.forEach((key, category) -> list.add(DataProvider.saveStable(output, Category.CODEC, category, categoryPathProvider.json(key))));
+        categories.forEach((key, category) -> list.add(DataProvider.saveStable(output, Category.CODEC.encodeStart(JsonOps.INSTANCE, category).getOrThrow(false, s -> {}), categoryPathProvider.json(key))));
         notes.forEach((key, note) ->
         {
             if (!categories.containsKey(note.getCategory()))
                 throw new IllegalStateException("Note " + note.id() + " has an invalid category " + note.getCategory());
-            list.add(DataProvider.saveStable(output, Note.CODEC, note, this.notePathProvider.json(key)));
+            list.add(DataProvider.saveStable(output, Note.CODEC.encodeStart(JsonOps.INSTANCE, note).getOrThrow(false, s -> {}), this.notePathProvider.json(key)));
         });
 
 

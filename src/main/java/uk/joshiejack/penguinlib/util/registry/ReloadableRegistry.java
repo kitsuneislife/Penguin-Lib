@@ -5,24 +5,17 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Sets;
 import com.mojang.serialization.Codec;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.network.protocol.configuration.ServerConfigurationPacketListener;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.network.configuration.ICustomConfigurationTask;
-import net.neoforged.neoforge.network.event.OnGameConfigurationEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.NotNull;
 import uk.joshiejack.penguinlib.PenguinLib;
-import uk.joshiejack.penguinlib.network.packet.SyncRegistryPacket;
 
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class ReloadableRegistry<O extends ReloadableRegistry.PenguinRegistry<O>> {
@@ -115,29 +108,6 @@ public class ReloadableRegistry<O extends ReloadableRegistry.PenguinRegistry<O>>
         void toNetwork(FriendlyByteBuf buf);
     }
 
-    @Mod.EventBusSubscriber(modid = PenguinLib.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
-    public static class Sync {
-        @SubscribeEvent
-        public static void onDataPack(OnGameConfigurationEvent event) {
-            event.register(new Configure(event.getListener()));
-        }
-    }
-
-    public record Configure (ServerConfigurationPacketListener listener) implements ICustomConfigurationTask {
-        public static final ConfigurationTask.Type TYPE = new ConfigurationTask.Type(SyncRegistryPacket.ID);
-
-        @Override
-        public void run(@NotNull Consumer<CustomPacketPayload> sender) {
-            ReloadableRegistry.REGISTRIES.stream()
-                    .sorted(Comparator.comparing(ReloadableRegistry::priority))
-                    .filter(ReloadableRegistry::sync)
-                    .forEach(s -> sender.accept(new SyncRegistryPacket(s)));
-            listener.finishCurrentTask(TYPE);
-        }
-
-        @Override
-        public @NotNull Type type() {
-            return TYPE;
-        }
-    }
+    // Imports removidos: NeoForged network/configuration. Usar Forge SimpleChannel para sync.
+    // Blocos Sync/Configure removidos. Use Forge SimpleChannel para sincronização customizada.
 }

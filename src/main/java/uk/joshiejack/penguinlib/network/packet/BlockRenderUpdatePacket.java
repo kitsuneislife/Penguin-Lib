@@ -13,7 +13,6 @@ import javax.annotation.Nonnull;
 public record BlockRenderUpdatePacket(BlockPos pos) implements PenguinPacket {
     public static final ResourceLocation ID = PenguinLib.prefix("block_render_update");
 
-    @Override
     public @Nonnull ResourceLocation id() {
         return ID;
     }
@@ -22,8 +21,8 @@ public record BlockRenderUpdatePacket(BlockPos pos) implements PenguinPacket {
         this(BlockPos.of(from.readLong()));
     }
 
-    @Override
     public void write(FriendlyByteBuf to) {
         to.writeLong(pos.asLong());
     }
 }
+

@@ -4,7 +4,7 @@ import dev.latvian.mods.rhino.Context;
 import dev.latvian.mods.rhino.Scriptable;
 import dev.latvian.mods.rhino.ScriptableObject;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.bus.api.Event;
+import net.minecraftforge.eventbus.api.Event;
 import org.apache.commons.lang3.tuple.Pair;
 import uk.joshiejack.penguinlib.scripting.Sandbox;
 import uk.joshiejack.penguinlib.scripting.ScriptFunction;

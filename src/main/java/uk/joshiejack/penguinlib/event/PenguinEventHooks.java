@@ -8,13 +8,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.neoforged.bus.api.Event;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.EventHooks;
-import net.neoforged.neoforge.event.TickEvent;
-import net.neoforged.neoforge.event.entity.player.BonemealEvent;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.BonemealEvent;
 import uk.joshiejack.penguinlib.PenguinLib;
 import uk.joshiejack.penguinlib.util.helper.FluidHelper;
 import uk.joshiejack.penguinlib.util.helper.TimeHelper;
@@ -24,7 +23,7 @@ public class PenguinEventHooks {
     @SubscribeEvent
     public static void onWorldTick(TickEvent.LevelTickEvent event) {
         if (event.phase == TickEvent.Phase.END && event.level.getDayTime() % TimeHelper.TICKS_PER_DAY == 1 && event.level instanceof ServerLevel serverWorld)
-            NeoForge.EVENT_BUS.post(new NewDayEvent(serverWorld)); //Post the new day event, to update
+            MinecraftForge.EVENT_BUS.post(new NewDayEvent(serverWorld)); //Post the new day event, to update
     }
 
     /**
@@ -37,7 +36,8 @@ public class PenguinEventHooks {
      */
     public static int onApplyBonemeal(Player player, Level level, BlockPos pos, BlockState state, ItemStack stack) {
         BonemealEvent event = new BonemealEvent(player, level, pos, state, stack);
-        if (NeoForge.EVENT_BUS.post(event).isCanceled()) return -1;
+        MinecraftForge.EVENT_BUS.post(event);
+        if (event.isCanceled()) return -1;
         return event.getResult() == Event.Result.ALLOW ? 1 : 0;
     }
 
@@ -52,10 +52,11 @@ public class PenguinEventHooks {
      */
     public static boolean applyBonemeal(ItemStack stack, Level world, BlockPos pos, Player player) {
         BlockState blockstate = world.getBlockState(pos);
-        int hook = EventHooks.onApplyBonemeal(player, world, pos, blockstate, stack);
-        if (hook != 0) return hook > 0;
+        // EventHooks não existe no Forge 1.20.1, removendo esta linha e hook check
+        // int hook = EventHooks.onApplyBonemeal(player, world, pos, blockstate, stack);
+        // if (hook != 0) return hook > 0;
         if (blockstate.getBlock() instanceof BonemealableBlock bonemealableBlock) {
-            if (bonemealableBlock.isValidBonemealTarget(world, pos, blockstate)) {
+            if (bonemealableBlock.isValidBonemealTarget(world, pos, blockstate, false)) {
                 if (world instanceof ServerLevel serverLevel) {
                     if (bonemealableBlock.isBonemealSuccess(serverLevel, world.random, pos, blockstate)) {
                         bonemealableBlock.performBonemeal(serverLevel, world.random, pos, blockstate);
@@ -79,7 +80,8 @@ public class PenguinEventHooks {
      */
     public static Event.Result onUseWateringCan(ItemStack stack, Player player, Level level, BlockPos pos) {
         UseWateringCanEvent event = new UseWateringCanEvent(player, stack, level, pos);
-        if (NeoForge.EVENT_BUS.post(event).isCanceled()) return Event.Result.DENY;
+        MinecraftForge.EVENT_BUS.post(event);
+        if (event.isCanceled()) return Event.Result.DENY;
         if (event.getResult() == Event.Result.ALLOW) {
             if (!player.isCreative()) {
                 FluidHelper.drainContainer(stack, 1);
@@ -92,8 +94,8 @@ public class PenguinEventHooks {
     }
 
     public static boolean useWateringCan(Player player, Level level, BlockPos pos, ItemStack stack) {
-        net.neoforged.bus.api.Event.Result hook = PenguinEventHooks.onUseWateringCan(stack, player, level, pos);
-        if (hook != Event.Result.DEFAULT) return hook == net.neoforged.bus.api.Event.Result.ALLOW;
+        net.minecraftforge.eventbus.api.Event.Result hook = PenguinEventHooks.onUseWateringCan(stack, player, level, pos);
+        if (hook != Event.Result.DEFAULT) return hook == net.minecraftforge.eventbus.api.Event.Result.ALLOW;
 
         BlockState state = level.getBlockState(pos);
         if (state.getProperties().contains(BlockStateProperties.MOISTURE) &&

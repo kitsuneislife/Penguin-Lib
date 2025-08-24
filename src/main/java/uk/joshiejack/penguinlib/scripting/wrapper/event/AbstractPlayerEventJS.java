@@ -1,6 +1,6 @@
 package uk.joshiejack.penguinlib.scripting.wrapper.event;
 
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
 import uk.joshiejack.penguinlib.scripting.wrapper.WrapperRegistry;
 import uk.joshiejack.penguinlib.scripting.wrapper.PlayerJS;
 

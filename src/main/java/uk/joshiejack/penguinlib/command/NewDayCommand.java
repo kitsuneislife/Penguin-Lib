@@ -11,7 +11,7 @@ public class NewDayCommand {
                 .executes(ctx -> {
                     ServerLevel world = ctx.getSource().getLevel();
                     long j = world.getLevelData().getDayTime() + 24000L;
-                    world.setDayTime(net.neoforged.neoforge.event.EventHooks.onSleepFinished(world, j - j % 24000L, world.getDayTime()));
+                    world.setDayTime(j - j % 24000L);  // Simplified for Forge 1.20.1
                     return 1;
                 });
     }

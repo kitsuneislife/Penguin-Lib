@@ -19,15 +19,15 @@ public abstract class PenguinRegistryPacket<O extends ReloadableRegistry.Penguin
         this.registryName = buffer.readResourceLocation();
     }
 
-    @Override
     public void write(FriendlyByteBuf pBuffer) {
         pBuffer.writeResourceLocation(registryName);
     }
 
-    @Override
+    
     public void handle(Player player) {
         handle(player, registry.get(registryName));
     }
 
     protected abstract void handle(Player player, O entry);
 }
+

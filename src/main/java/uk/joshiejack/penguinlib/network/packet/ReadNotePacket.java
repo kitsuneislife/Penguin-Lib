@@ -15,7 +15,6 @@ import uk.joshiejack.penguinlib.world.note.Note;
 public record ReadNotePacket(Note note) implements PenguinPacket {
     public static final ResourceLocation ID = PenguinLib.prefix("read_note");
 
-    @Override
     public @NotNull ResourceLocation id() {
         return ID;
     }
@@ -24,13 +23,13 @@ public record ReadNotePacket(Note note) implements PenguinPacket {
         this(PenguinNetwork.readRegistry(PenguinRegistries.NOTES, buf));
     }
 
-    @Override
     public void write(@NotNull FriendlyByteBuf buf) {
         PenguinNetwork.writeRegistry(note, buf);
     }
 
-    @Override
+    
     public void handle(Player player) {
         note.read(player);
     }
 }
+

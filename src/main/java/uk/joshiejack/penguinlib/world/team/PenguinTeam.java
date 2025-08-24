@@ -6,8 +6,8 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.util.INBTSerializable;
 import org.jetbrains.annotations.NotNull;
 import uk.joshiejack.penguinlib.event.TeamChangedOwnerEvent;
 import uk.joshiejack.penguinlib.network.PenguinNetwork;
@@ -60,7 +60,7 @@ public class PenguinTeam implements INBTSerializable<CompoundTag> {
     public PenguinTeam onChanged(ServerLevel world) {
         if (!members.contains(owner)) {
             this.owner = members.stream().findFirst().orElse(null); //Grab a new one, it can be null
-            NeoForge.EVENT_BUS.post(new TeamChangedOwnerEvent(teamUUID, owner));
+            MinecraftForge.EVENT_BUS.post(new TeamChangedOwnerEvent(teamUUID, owner));
         }
 
         syncToTeam(world);
@@ -150,7 +150,7 @@ public class PenguinTeam implements INBTSerializable<CompoundTag> {
 
         if (owner == null) {
             owner = members.stream().findFirst().orElse(null);
-            NeoForge.EVENT_BUS.post(new TeamChangedOwnerEvent(teamUUID, owner));
+            MinecraftForge.EVENT_BUS.post(new TeamChangedOwnerEvent(teamUUID, owner));
         }
     }
 }

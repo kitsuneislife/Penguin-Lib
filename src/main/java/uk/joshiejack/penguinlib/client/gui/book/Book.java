@@ -12,8 +12,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import uk.joshiejack.penguinlib.client.gui.AbstractContainerScreen;
 import uk.joshiejack.penguinlib.client.gui.book.page.AbstractPage;
@@ -145,7 +145,7 @@ public class Book extends AbstractContainerScreen<AbstractBookMenu> {
     @Override
     protected void renderBg(@Nonnull GuiGraphics matrix, float partialTicks, int mouseX, int mouseY) {
         super.renderBg(matrix, partialTicks, mouseX, mouseY);
-        renderTransparentBackground(matrix);
+                    super.renderBackground(matrix);  // Simplified for Forge 1.20.1
         matrix.blit(backgroundL, bgLeftOffset, topPos, 102, 0, 154, 202);
         matrix.blit(backgroundR, centre, topPos, 0, 0, 154, 202);
     }

@@ -1,8 +1,8 @@
 package uk.joshiejack.penguinlib.client.gui.book.page;
 
 import net.minecraft.network.chat.Component;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import uk.joshiejack.penguinlib.client.gui.book.Book;
 import uk.joshiejack.penguinlib.client.gui.book.widget.ArrowButton;
 

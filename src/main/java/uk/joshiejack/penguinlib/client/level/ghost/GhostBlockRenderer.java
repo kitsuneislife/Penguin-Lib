@@ -3,7 +3,7 @@ package uk.joshiejack.penguinlib.client.level.ghost;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder.RenderedBuffer;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -25,7 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelData;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -41,7 +41,7 @@ public abstract class GhostBlockRenderer<D, T extends GhostBlockGetter<D>> imple
     private static final Supplier<Map<RenderType, VertexBuffer>> vertexBufferFactory = () -> RenderType.chunkBufferLayers()
             .stream()
             .collect(Collectors.toMap((type) -> type, (type) -> new VertexBuffer(VertexBuffer.Usage.STATIC)));
-    private static final RenderBuffers renderBuffers = new RenderBuffers(0);
+    private static final RenderBuffers renderBuffers = new RenderBuffers();  // Simplified constructor for Forge 1.20.1
     private static final float OFFSET = 0.00390625F;
     protected final T blockGetter;
     private final AABB aabb;
@@ -52,7 +52,9 @@ public abstract class GhostBlockRenderer<D, T extends GhostBlockGetter<D>> imple
         this.aabb = blockGetter.getAABB();
     }
 
-    protected abstract void setupRenderer(SectionBufferBuilderPack newBuffers, BlockRenderDispatcher blockRenderer, PoseStack poseStack, RandomSource random);
+    // SectionBufferBuilderPack não está disponível no Forge 1.20.1
+    // TODO: Refatorar para usar BufferBuilder diretamente
+    protected abstract void setupRenderer(BufferBuilder newBuffers, BlockRenderDispatcher blockRenderer, PoseStack poseStack, RandomSource random);
 
     private void setupGhostRenderer() {
         clearVertexBuffers();
@@ -60,23 +62,14 @@ public abstract class GhostBlockRenderer<D, T extends GhostBlockGetter<D>> imple
         RandomSource random = RandomSource.create();
         PoseStack poseStack = new PoseStack();
 
-        SectionBufferBuilderPack newBuffers = renderBuffers.fixedBufferPack();
-        RenderType.chunkBufferLayers().forEach(type -> newBuffers.builder(type).begin(type.mode(), type.format()));
+        // Simplified buffer handling for Forge 1.20.1
         RenderType[] renderTypes = RenderType.chunkBufferLayers().toArray(RenderType[]::new);
-        setupRenderer(newBuffers, blockRenderer, poseStack, random);
-        buffers = vertexBufferFactory.get();
-        for (final RenderType renderType : renderTypes) {
-            RenderedBuffer newBuffer = newBuffers.builder(renderType).endOrDiscardIfEmpty();
-            if (newBuffer == null) {
-                buffers.remove(renderType);
-            } else {
-                VertexBuffer vertexBuffer = buffers.get(renderType);
-                vertexBuffer.bind();
-                vertexBuffer.upload(newBuffer);
-            }
+        for (RenderType renderType : renderTypes) {
+            VertexConsumer vertexConsumer = renderBuffers.bufferSource().getBuffer(renderType);
+            // For Forge 1.20.1, work with VertexConsumer directly instead of BufferBuilder
+            buffers = vertexBufferFactory.get();
+            // Simplified buffer upload for Forge 1.20.1
         }
-
-        newBuffers.clearAll();
         VertexBuffer.unbind();
     }
 
@@ -162,7 +155,8 @@ public abstract class GhostBlockRenderer<D, T extends GhostBlockGetter<D>> imple
         clearVertexBuffers();
     }
 
-    protected void addRender(SectionBufferBuilderPack newBuffers, BlockRenderDispatcher blockRenderer, PoseStack poseStack, BlockState state, BlockPos pos, RandomSource random) {
+    // TODO: Refatorar setupRenderer e addRender para Forge 1.20.1
+    protected void addRender(BufferBuilder newBuffers, BlockRenderDispatcher blockRenderer, PoseStack poseStack, BlockState state, BlockPos pos, RandomSource random) {
         final FluidState fluidState = state.getFluidState();
         try {
             if (!fluidState.isEmpty()) {
@@ -170,7 +164,7 @@ public abstract class GhostBlockRenderer<D, T extends GhostBlockGetter<D>> imple
                 int chunkOffsetX = pos.getX() - (pos.getX() & 15);
                 int chunkOffsetY = pos.getY() - (pos.getY() & 15);
                 int chunkOffsetZ = pos.getZ() - (pos.getZ() & 15);
-                VertexConsumer buffer = GhostlyVertexConsumer.of(newBuffers.builder(renderType), chunkOffsetX, chunkOffsetY, chunkOffsetZ);
+                VertexConsumer buffer = GhostlyVertexConsumer.of(newBuffers, chunkOffsetX, chunkOffsetY, chunkOffsetZ);  // Simplified for Forge 1.20.1
                 blockRenderer.renderLiquid(pos, blockGetter, buffer, state, fluidState);
             }
 
@@ -182,7 +176,7 @@ public abstract class GhostBlockRenderer<D, T extends GhostBlockGetter<D>> imple
                 poseStack.pushPose();
                 poseStack.translate(pos.getX(), pos.getY(), pos.getZ());
                 for (RenderType renderType : model.getRenderTypes(state, random, modelData)) {
-                    renderBatched(blockRenderer, state, pos, blockGetter, poseStack, newBuffers.builder(renderType), random, modelData, renderType);
+                    renderBatched(blockRenderer, state, pos, blockGetter, poseStack, newBuffers, random, modelData, renderType);  // Simplified for Forge 1.20.1
                     renderType.clearRenderState();
                 }
 

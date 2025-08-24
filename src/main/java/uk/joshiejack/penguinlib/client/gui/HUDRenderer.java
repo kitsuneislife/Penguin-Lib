@@ -11,10 +11,11 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.fml.common.Mod;
 import uk.joshiejack.penguinlib.PenguinLib;
 import uk.joshiejack.penguinlib.client.PenguinClientConfig;
 import uk.joshiejack.penguinlib.util.PenguinTags;
@@ -25,6 +26,7 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = PenguinLib.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@OnlyIn(Dist.CLIENT)
 public class HUDRenderer {
     public static Object2ObjectMap<ResourceKey<Level>, HUDRenderData> RENDERERS = new Object2ObjectOpenHashMap<>();
 
@@ -97,7 +99,7 @@ public class HUDRenderer {
 
     @SubscribeEvent
     public static void registerGuiOverlay(RegisterGuiOverlaysEvent event) {
-        event.registerAboveAll(new ResourceLocation(PenguinLib.MODID, "hud"), (gui, graphics, partialTick, width, height) -> {
+        event.registerAboveAll("hud", (gui, graphics, partialTick, width, height) -> {  // Simplified for Forge 1.20.1
             if (RENDERERS.isEmpty()) return;
             if (!gui.getMinecraft().options.hideGui) {
                 gui.setupOverlayRenderState(true, false);
@@ -109,7 +111,7 @@ public class HUDRenderer {
     }
 
     private static void renderHUD(Minecraft mc, GuiGraphics graphics) {
-        if (mc.getDebugOverlay().showDebugScreen()) return;
+        if (mc.options.renderDebug) return;  // Simplified for Forge 1.20.1
         HUDRenderData hud = RENDERERS.get(mc.level.dimension());
         if (hud != null) {
             PoseStack matrix = graphics.pose();

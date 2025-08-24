@@ -5,7 +5,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -15,22 +14,10 @@ import uk.joshiejack.penguinlib.PenguinLib;
 
 
 public class PenguinButton extends Button {
-    protected static final WidgetSprites SPRITES = new WidgetSprites(
-            PenguinLib.prefix("widget/button"),
-            PenguinLib.prefix("widget/button_disabled"),
-            PenguinLib.prefix("widget/button_highlighted")
-    );
-
-    private final WidgetSprites sprites;
+    // WidgetSprites não está disponível no Forge 1.20.1, usar ResourceLocation diretamente
 
     public PenguinButton(Button.Builder builder) {
         super(builder);
-        this.sprites = SPRITES;
-    }
-
-    public PenguinButton(Button.Builder builder, @Nullable WidgetSprites sprites) {
-        super(builder);
-        this.sprites = sprites == null ? SPRITES : sprites;
     }
 
     public static PenguinButton.Builder penguinBuilder(@NotNull Component pMessage, Button.@NotNull OnPress pOnPress) {
@@ -42,7 +29,9 @@ public class PenguinButton extends Button {
         pGuiGraphics.setColor(1.0F, 1.0F, 1.0F, this.alpha);
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
-        pGuiGraphics.blitSprite(sprites.get(this.active, this.isHoveredOrFocused()), this.getX(), this.getY(), this.getWidth(), this.getHeight());
+        // Render simples sem WidgetSprites para Forge 1.20.1
+        pGuiGraphics.fill(this.getX(), this.getY(), this.getX() + this.getWidth(), this.getY() + this.getHeight(), 
+                         this.active ? (this.isHoveredOrFocused() ? 0xFF8B8B8B : 0xFF000000) : 0xFF666666);
         pGuiGraphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         renderForeground(pGuiGraphics, Minecraft.getInstance().font, pMouseX, pMouseY, pPartialTick);
     }
@@ -52,22 +41,19 @@ public class PenguinButton extends Button {
     }
 
     public static class Builder extends Button.Builder {
-        private WidgetSprites sprites;
-
+        
         public Builder(Component component, OnPress press) {
             super(component, press);
         }
 
         public Builder sprites(String modid, String name) {
-            sprites = new WidgetSprites(new ResourceLocation(modid, "widget/" + name),
-                    new ResourceLocation(modid, "widget/" + name + "_disabled"),
-                    new ResourceLocation(modid, "widget/" + name + "_highlighted"));
+            // WidgetSprites não disponível no Forge 1.20.1
             return this;
         }
 
         @Override
         public @NotNull PenguinButton build() {
-            return new PenguinButton(this, sprites);
+            return new PenguinButton(this);
         }
     }
 }

@@ -1,6 +1,6 @@
 package uk.joshiejack.penguinlib.data.generator.builder;
 
-import net.minecraft.advancements.Criterion;
+import net.minecraft.advancements.CriterionTriggerInstance;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
@@ -19,7 +19,7 @@ public abstract class SimplePenguinBuilder<T extends Recipe<Container>> implemen
     }
 
     @Override
-    public RecipeBuilder unlockedBy(String unlocked, Criterion<?> criteria) {
+    public RecipeBuilder unlockedBy(String unlocked, CriterionTriggerInstance criteria) {
         return this;
     }
 

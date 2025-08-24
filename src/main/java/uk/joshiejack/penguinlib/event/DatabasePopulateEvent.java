@@ -1,6 +1,6 @@
 package uk.joshiejack.penguinlib.event;
 
-import net.neoforged.bus.api.Event;
+import net.minecraftforge.eventbus.api.Event;
 import uk.joshiejack.penguinlib.data.database.Database;
 import uk.joshiejack.penguinlib.data.database.Table;
 
